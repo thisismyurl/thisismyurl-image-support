@@ -6,7 +6,7 @@
  * Plugin URI:  https://thisismyurl.com/thisismyurl-image-support/
  * Donate link: https://thisismyurl.com/donate/
  * Description: Advanced image sanitization, duplicate merging, WebP filesystem discovery, and deep content re-syncing.
- * Version:     1.5.1229
+ * Version:     0.6112
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit;
