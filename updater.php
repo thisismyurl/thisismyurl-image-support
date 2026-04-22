@@ -1,10 +1,11 @@
 <?php
 /**
  * GitHub Plugin Updater
- * * Handles the background updates for GitHub-hosted plugins.
- * 
- * Updated: 1.251229
- * 
+ *
+ * Handles the background updates for GitHub-hosted plugins.
+ *
+ * @package TIMU_Image_Support
+ * Version:  1.5.1229
  */
 
 if ( ! class_exists( 'FWO_GitHub_Updater' ) ) {
