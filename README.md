@@ -64,3 +64,22 @@ For 2026, this is 1.6365.
 ## License
 
 GPLv2 or later.
+
+---
+
+## About This Is My URL
+
+This plugin is built and maintained by [This Is My URL](https://thisismyurl.com/), a WordPress development and technical SEO practice with more than 25 years of experience helping organizations build practical, maintainable web systems.
+
+Christopher Ross ([@thisismyurl](https://profiles.wordpress.org/thisismyurl/)) is a WordCamp speaker, plugin developer, and WordPress practitioner based in Fort Erie, Ontario, Canada. Member of the WordPress community since 2007.
+
+### More Resources
+
+- **Plugin page:** [https://thisismyurl.com/thisismyurl-image-support/](https://thisismyurl.com/thisismyurl-image-support/)
+- **WordPress.org profile:** [profiles.wordpress.org/thisismyurl](https://profiles.wordpress.org/thisismyurl/)
+- **Other plugins:** [github.com/thisismyurl](https://github.com/thisismyurl)
+- **Website:** [thisismyurl.com](https://thisismyurl.com/)
+
+## License
+
+GPL-2.0-or-later — see [LICENSE](LICENSE) or [gnu.org/licenses/gpl-2.0.html](https://www.gnu.org/licenses/gpl-2.0.html).
