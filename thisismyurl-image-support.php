@@ -6,7 +6,11 @@
  * Plugin URI:  https://thisismyurl.com/thisismyurl-image-support/
  * Donate link: https://thisismyurl.com/donate/
  * Description: Advanced image sanitization, duplicate merging, WebP filesystem discovery, and deep content re-syncing.
+<<<<<<< HEAD
  * Version:     0.6112
+=======
+ * Version:     0.6112
+>>>>>>> cbc4c3e (updates from common code)
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit;
@@ -357,3 +361,13 @@ class TIMU_IC {
 }
 
 new TIMU_IC();
+
+require_once plugin_dir_path( __FILE__ ) . 'github-updater.php';
+
+timu_boot_github_release_updater(
+    array(
+        'plugin_file' => __FILE__,
+        'slug'        => 'thisismyurl-image-support',
+        'repo'        => 'thisismyurl/thisismyurl-image-support',
+    )
+);
