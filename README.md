@@ -1,21 +1,30 @@
-# Image Support by thisismyurl
+# Image Support by This Is My URL
 
-Image Support is a WordPress plugin for cleaning up media filenames, discovering matching WebP files already on disk, updating content references, and restoring originals from backup when needed.
+Current version: 1.6365
+
+Image Support is a WordPress plugin for SEO-focused filename cleanup, media hardening, content reference synchronization, and safe rollback support.
 
 ## What It Does
 
-- Sanitizes image filenames by stripping generic words and normalizing names.
-- Detects duplicate image slugs during batch cleanup and merges duplicates.
-- Rewrites post content references when filenames change.
-- Looks for existing WebP files in the current uploads path and up to three previous monthly folders.
-- Generates WebP files on the fly for JPEG and PNG images when no matching file exists.
-- Stores original files in `/wp-content/uploads/timu-image-backups/` before renaming.
-- Redirects requests for moved image URLs to the current attachment URL when a backup mapping exists.
+- Tabbed admin interface with Optimize, Settings, and Report tabs.
+- Batch AJAX processing with visible spinner and continuous progress updates.
+- Search and pagination for pending and managed media lists.
+- Filename sanitization for cleaner, SEO-friendlier image slugs.
+- Content reference synchronization when file names change.
+- Optional optimize-on-upload and background auto optimization.
+- Optional auto optimization triggers for wp-admin traffic and WP-Cron.
+- Backup and restore support for renamed image assets.
+- 404 redirect support for legacy image paths.
+- ROI reporting with business-friendly time windows.
+- Duplicate cleanup for obviously identical media while preserving links.
+- Metadata hardening (strip sensitive metadata + embed creator credit).
+- Resize controls to keep oversized images server-safe.
 
 ## Requirements
 
-- WordPress 5.0 or higher
-- PHP with GD support for fallback WebP generation
+- WordPress 6.0+
+- PHP 7.4+
+- GD or Imagick image support
 
 ## Installation
 
@@ -26,11 +35,11 @@ Image Support is a WordPress plugin for cleaning up media filenames, discovering
 ## Usage
 
 1. Open `Tools > Image Support`.
-2. Set the batch size for the next run.
-3. Run `Preview Changes (Dry Run)` to inspect proposed renames and WebP replacements.
-4. Run `Update & Sync WebP` to apply the changes.
+2. Configure optimization, automation, and reporting assumptions in Settings.
+3. Run `Optimize All` from the Optimize tab.
+4. Review measurable impact in the Report tab.
 
-The plugin processes image attachments in batches, updates matching content references, and keeps a backup copy of any renamed original file.
+The plugin processes image attachments in batches, updates matching content references, and keeps backup copies for rollback.
 
 ## Restore Behavior
 
@@ -40,9 +49,17 @@ When an image has been renamed, the plugin records the original path and filenam
 
 ## Notes
 
-- The admin UI currently provides a single tools screen with batch processing actions.
-- The plugin does not currently include ALT text management, metadata dashboards, settings tabs, or operation logs.
-- WebP generation falls back to PHP GD when the sister WebP plugin is not available.
+- This plugin uses a tabbed interface and automation workflow for consistency.
+- The focus is filenames, references, metadata safety, duplicates, and SEO-related asset cleanup.
+
+## Versioning
+
+This plugin uses the format 1.Yddd:
+
+- Y = last digit of the year
+- ddd = Julian day number for the final day of that year
+
+For 2026, this is 1.6365.
 
 ## License
 
