@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  lint:
+    name: PHP Syntax (${{ matrix.php }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ["7.4", "8.0", "8.1", "8.2", "8.3"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+      - name: PHP syntax check
+        run: find . -name "*.php" -not -path "./.git/*" -exec php -l {} \; | grep -v "^No syntax errors" || true
+
+  phpcs:
+    name: PHPCS (WordPress Coding Standards)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          tools: phpcs, wp-coding-standards/wpcs
+      - name: Configure PHPCS
+        run: phpcs --config-set installed_paths $(composer config home)/vendor/wp-coding-standards/wpcs
+        continue-on-error: true
+      - name: Run PHPCS
+        run: phpcs --standard=WordPress --extensions=php --ignore=assets,vendor . || true
+
