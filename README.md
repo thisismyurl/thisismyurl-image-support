@@ -1,5 +1,8 @@
 # Image Support by This Is My URL
 
+[![CI](https://github.com/thisismyurl/thisismyurl-image-support/actions/workflows/ci.yml/badge.svg)](https://github.com/thisismyurl/thisismyurl-image-support/actions/workflows/ci.yml) [![WordPress Tested](https://img.shields.io/badge/WordPress-6.9%2B-blue)](https://wordpress.org/) [![License](https://img.shields.io/badge/License-GPL--2.0-blue)](LICENSE)
+
+
 Current version: 1.6365
 
 Image Support is a WordPress plugin for SEO-focused filename cleanup, media hardening, content reference synchronization, and safe rollback support.
