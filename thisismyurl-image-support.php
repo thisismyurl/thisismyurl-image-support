@@ -6,11 +6,14 @@
  * Plugin URI:  https://thisismyurl.com/thisismyurl-image-support/
  * Donate link: https://thisismyurl.com/donate/
  * Description: Advanced image sanitization, duplicate merging, WebP filesystem discovery, and deep content re-syncing.
-<<<<<<< HEAD
- * Version:     0.6112
-=======
- * Version:     0.6112
->>>>>>> cbc4c3e (updates from common code)
+ * Version:     0.6122
+ * Requires at least: 6.0
+ * Requires PHP: 7.4
+ * Update URI: https://github.com/thisismyurl/thisismyurl-image-support
+ * Text Domain: thisismyurl-image-support
+ * License: GPL2
+ *
+ * @package TIMU_Image_Support
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit;
@@ -310,7 +313,10 @@ class TIMU_IC {
 
     public function handle_restore_request() {
         if ( ! isset( $_GET['restore'] ) || ! current_user_can( 'manage_options' ) ) return;
-        $file = sanitize_text_field( $_GET['restore'] );
+        if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_key( wp_unslash( $_GET['_wpnonce'] ) ), 'thisismyurl_image_support_restore' ) ) {
+            wp_die( esc_html__( 'Security check failed.', 'thisismyurl-image-support' ) );
+        }
+        $file = basename( sanitize_text_field( wp_unslash( $_GET['restore'] ) ) );
         global $wpdb;
         $id = $wpdb->get_var( $wpdb->prepare( "SELECT post_id FROM $wpdb->postmeta WHERE meta_key = '_timu_original_filename' AND meta_value = %s LIMIT 1", $file ) );
         if ( $id && file_exists( $this->backup_dir . $file ) ) {
@@ -331,22 +337,43 @@ class TIMU_IC {
     }
 
     public function render_admin_page() {
-        $user_batch = isset($_POST['batch_limit']) ? (int) $_POST['batch_limit'] : (isset($_POST['dry_run']) ? 500 : 5);
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( esc_html__( 'You do not have permission to access this page.', 'thisismyurl-image-support' ) );
+        }
+
+        $is_post = ! empty( $_POST ) && ( isset( $_POST['dry_run'] ) || isset( $_POST['run_cleanup'] ) );
+        if ( $is_post ) {
+            check_admin_referer( 'thisismyurl_image_support_action', 'thisismyurl_image_support_nonce' );
+        }
+
+        $user_batch = $is_post && isset( $_POST['batch_limit'] )
+            ? max( 1, min( 1000, (int) $_POST['batch_limit'] ) )
+            : ( $is_post && isset( $_POST['dry_run'] ) ? 500 : 5 );
         ?>
         <div class="wrap">
             <h1>Image Support <span style="font-size: 0.5em; color: #646970;">by thisismyurl.com</span></h1>
             <div class="postbox">
-                <h2 class="hndle"><span>Image Optimization & Deep Sync</span></h2>
+                <h2 class="hndle"><span>Image Optimization &amp; Deep Sync</span></h2>
                 <div class="inside">
                     <form method="post">
-                        <p><label for="batch_limit"><strong>Images per Batch:</strong></label> <input type="number" id="batch_limit" name="batch_limit" value="<?php echo esc_attr($user_batch); ?>" min="1" max="1000" style="width: 80px;"></p>
-                        <div style="display: flex; gap: 10px;"><input type="submit" name="dry_run" class="button" value="Preview Changes (Dry Run)"><input type="submit" name="run_cleanup" class="button button-primary" value="Update & Sync WebP" onclick="return confirm('Update images and sync WebP?');"></div>
+                        <?php wp_nonce_field( 'thisismyurl_image_support_action', 'thisismyurl_image_support_nonce' ); ?>
+                        <p><label for="batch_limit"><strong>Images per Batch:</strong></label> <input type="number" id="batch_limit" name="batch_limit" value="<?php echo esc_attr( $user_batch ); ?>" min="1" max="1000" style="width: 80px;"></p>
+                        <div style="display: flex; gap: 10px;"><input type="submit" name="dry_run" class="button" value="Preview Changes (Dry Run)"><input type="submit" name="run_cleanup" class="button button-primary" value="Update &amp; Sync WebP" onclick="return confirm('Update images and sync WebP?');"></div>
                     </form>
-                    <?php if ( isset($_POST['dry_run']) || isset($_POST['run_cleanup']) ) : ?>
+                    <?php if ( $is_post ) : ?>
                         <ul style="margin-top:20px; max-height:500px; overflow:auto; background:#f6f7f7; padding:15px; border:1px solid #dcdcde;">
-                            <?php $webp_hits = $this->sync_webp_from_filesystem( isset($_POST['dry_run']) );
-                            if ( ! empty( $webp_hits ) ) { echo "<li><strong>Filesystem WebP Discovery:</strong></li><ul style='margin-left:20px;'>"; foreach ( $webp_hits as $hit ) echo "<li>" . ( isset($_POST['dry_run']) ? "Found" : "Replaced" ) . " <code>{$hit['file']}</code> in {$hit['dir']}</li>"; echo "</ul><hr>"; }
-                            $this->handle_cleanup( isset($_POST['dry_run']), $user_batch ); ?>
+                            <?php
+                            $is_dry_run = isset( $_POST['dry_run'] );
+                            $webp_hits  = $this->sync_webp_from_filesystem( $is_dry_run );
+                            if ( ! empty( $webp_hits ) ) {
+                                echo "<li><strong>Filesystem WebP Discovery:</strong></li><ul style='margin-left:20px;'>";
+                                foreach ( $webp_hits as $hit ) {
+                                    echo '<li>' . ( $is_dry_run ? 'Found' : 'Replaced' ) . ' <code>' . esc_html( $hit['file'] ) . '</code> in ' . esc_html( $hit['dir'] ) . '</li>';
+                                }
+                                echo '</ul><hr>';
+                            }
+                            $this->handle_cleanup( $is_dry_run, $user_batch );
+                            ?>
                         </ul>
                     <?php endif; ?>
                 </div>
