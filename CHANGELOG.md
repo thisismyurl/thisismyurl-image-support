@@ -4,6 +4,14 @@ All notable changes to **Image Support by thisismyurl.com** are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses the `x.Yddd` versioning scheme: `x` = release class (0 = pre-release, 1 = full), `Y` = last digit of year, `ddd` = Julian day.
 
+## [0.6124] - 2026-05-04
+
+### Changed
+- Version bump to keep the `x.Yddd` scheme aligned with the release date (Julian day 124, 2026-05-04). No code changes from `0.6123`; this release ships the hygiene additions below.
+
+### Added
+- `.distignore` so the .org build excludes dev-only files (`.github/`, `CHANGELOG.md`, `CONTRIBUTING.md`, `SECURITY.md`, `phpcs.xml.dist`, etc.) from the deployed plugin zip.
+
 ## [0.6123] - 2026-05-03
 
 ### Security

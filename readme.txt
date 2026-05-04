@@ -8,7 +8,7 @@ Tags: webp, media, images, optimization, filenames
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.1
-Stable tag: 0.6123
+Stable tag: 0.6124
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -94,6 +94,10 @@ I review PRs thoughtfully and appreciate well-tested contributions. Contributing
 
 == Changelog ==
 
+= 0.6124 =
+* Quality: version bump to match the `x.Yddd` scheme on Julian day 124 (2026-05-04). No code changes from 0.6123.
+* Quality: `.distignore` added so the .org build excludes dev-only files from the deployed zip.
+
 = 0.6123 =
 * Safety: replaced regex-based `post_content` rewrites with `WP_HTML_Tag_Processor` (WP 6.2+). Walks `<img src>`, `<a href>`, and `<img srcset>` only, host-checked, with per-post revisions snapshotted before update.
 * Safety: replaced site-wide `UPDATE wp_posts SET post_content = REPLACE(...)` with bounded `WP_Query` batches (50 posts per page, public post types only, revisions excluded).
@@ -119,6 +123,9 @@ I review PRs thoughtfully and appreciate well-tested contributions. Contributing
 * Legacy version string from a prior numbering scheme. Retained here only for archive context; superseded by 0.6123 onward.
 
 == Upgrade Notice ==
+
+= 0.6124 =
+Hygiene-only bump on top of the 0.6123 safety release. The destructive-ops switch remains OFF by default — toggle it under Tools > Image Support > Settings before re-running write operations.
 
 = 0.6123 =
 Major safety release. Take a database backup before updating. The destructive-ops switch is now OFF by default — toggle it under Tools > Image Support > Settings before re-running write operations.

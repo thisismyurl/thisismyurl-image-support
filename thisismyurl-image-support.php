@@ -6,7 +6,7 @@
  * Plugin URI:  https://thisismyurl.com/thisismyurl-image-support/
  * Donate link: https://thisismyurl.com/donate/
  * Description: Advanced image sanitization, duplicate merging, WebP filesystem discovery, and deep content re-syncing. Destructive — requires opt-in via the "Confirm destructive operations" option before any rename, merge, or post_content rewrite runs.
- * Version:     0.6123
+ * Version:     0.6124
  * Requires at least: 6.4
  * Requires PHP: 8.1
  * Update URI: https://github.com/thisismyurl/thisismyurl-image-support
