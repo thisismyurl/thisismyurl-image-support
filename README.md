@@ -127,6 +127,11 @@ I believe in straightforward solutions that work. No hype. No unnecessary comple
 - **LinkedIn:** [linkedin.com/in/thisismyurl](https://linkedin.com/in/thisismyurl)
 
 
+## Contributors
+
+- **Christopher Ross** ([@thisismyurl](https://github.com/thisismyurl)) — author and maintainer
+- **Contributors:** Thanks to everyone who's reported issues, tested edge cases, and contributed code
+
 ## License
 
 GPL-2.0-or-later — see [LICENSE](LICENSE) or [gnu.org/licenses/gpl-2.0.html](https://www.gnu.org/licenses/gpl-2.0.html).
