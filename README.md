@@ -135,3 +135,8 @@ I believe in straightforward solutions that work. No hype. No unnecessary comple
 ## License
 
 GPL-2.0-or-later — see [LICENSE](LICENSE) or [gnu.org/licenses/gpl-2.0.html](https://www.gnu.org/licenses/gpl-2.0.html).
+
+
+---
+*This project follows the [10 Core Pillars](PILLARS.md). Support quality work [here](https://github.com/sponsors/thisismyurl).*
+

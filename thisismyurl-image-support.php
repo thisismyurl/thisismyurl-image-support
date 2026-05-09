@@ -1,11 +1,11 @@
-<?php
+﻿<?php
 /**
  * Author:      Christopher Ross
  * Author URI:  https://thisismyurl.com/
  * Plugin Name: Image Support by thisismyurl.com
  * Plugin URI:  https://thisismyurl.com/thisismyurl-image-support/
  * Donate link: https://thisismyurl.com/donate/
- * Description: Advanced image sanitization, duplicate merging, WebP filesystem discovery, and deep content re-syncing. Destructive — requires opt-in via the "Confirm destructive operations" option before any rename, merge, or post_content rewrite runs.
+ * Description: Advanced image sanitization, duplicate merging, WebP filesystem discovery, and deep content re-syncing. Destructive â€” requires opt-in via the "Confirm destructive operations" option before any rename, merge, or post_content rewrite runs.
  * Version:     0.6124
  * Requires at least: 6.4
  * Requires PHP: 8.1
@@ -35,7 +35,7 @@ class TIMU_IC {
         add_action( 'template_redirect', [ $this, 'handle_image_404_redirects' ] );
 
         // The on-render WebP swap is opt-in. Synchronous GD encoding inside the_content is a footgun
-        // on cold caches — it stalls TTFB on the first hit. Operators who need it can enable via filter
+        // on cold caches â€” it stalls TTFB on the first hit. Operators who need it can enable via filter
         // and supply async pre-generation; default OFF.
         if ( apply_filters( 'thisismyurl_image_support_enable_dynamic_webp', false ) ) {
             add_filter( 'the_content', [ $this, 'dynamic_webp_replacement' ] );
@@ -51,7 +51,7 @@ class TIMU_IC {
 
     /**
      * Drop hardening files into the backup directory so it is never directory-listable
-     * and never serves anything by default. Idempotent — safe to call repeatedly.
+     * and never serves anything by default. Idempotent â€” safe to call repeatedly.
      */
     public function ensure_backup_dir_protected() {
         if ( ! is_dir( $this->backup_dir ) ) {
@@ -115,7 +115,7 @@ class TIMU_IC {
      *
      * Per-request memoization avoids stat()-storms on pages with many duplicate <img> tags.
      * If still missing, schedules a single async generation job (one-shot wp-cron) and
-     * returns false for THIS render — we never block a render thread on GD encoding.
+     * returns false for THIS render â€” we never block a render thread on GD encoding.
      */
     private function verify_and_locate_webp( $url ) {
         static $cache = array();
@@ -202,7 +202,7 @@ class TIMU_IC {
             }
         }
 
-        // Fallback: GD. Refuse if GD is not loaded — never fatal-error a request.
+        // Fallback: GD. Refuse if GD is not loaded â€” never fatal-error a request.
         if ( ! extension_loaded( 'gd' ) || ! function_exists( 'imagewebp' ) ) {
             return false;
         }
@@ -300,13 +300,13 @@ class TIMU_IC {
      *  - normalises whitespace + underscores to hyphens, lowercases, single-dash collapse;
      *  - falls back to a deterministic "asset-{ID}" slug only when the name reduces to empty.
      *
-     * Returns false on any validation failure — callers MUST check the return value.
+     * Returns false on any validation failure â€” callers MUST check the return value.
      */
     private function sanitize_filename( $filename, $post_id = 0 ) {
         if ( ! is_string( $filename ) || '' === $filename ) {
             return false;
         }
-        // Reject NULs and the RTL override character outright — both have been used in
+        // Reject NULs and the RTL override character outright â€” both have been used in
         // documented filename-spoofing exploits.
         if ( false !== strpos( $filename, "\0" ) || false !== strpos( $filename, "\xE2\x80\xAE" ) ) {
             return false;
@@ -424,14 +424,14 @@ class TIMU_IC {
      *
      * Walks <img> and <a> tags only. Skips elements inside <code>, <pre>, <script>.
      * For each src/href, only rewrites when the host matches the site URL AND the
-     * basename (with optional -WxH thumbnail suffix) matches old → new exactly.
+     * basename (with optional -WxH thumbnail suffix) matches old â†’ new exactly.
      *
      * Bounded WP_Query batch (posts_per_page=50, paged) over post_type=any/post_status=any
      * minus revisions. Snapshots each affected post via wp_save_post_revision() BEFORE update.
      *
      * @param string $old_filename Source basename, e.g. "old-image.jpg".
      * @param string $new_filename Target basename, e.g. "old-image.webp".
-     * @param bool   $dry_run      When true, report only — no writes.
+     * @param bool   $dry_run      When true, report only â€” no writes.
      * @return array Unique list of source URLs that matched, for the operator report.
      */
     private function sync_content_references( $old_filename, $new_filename, $dry_run = false ) {
@@ -524,7 +524,7 @@ class TIMU_IC {
      *
      * Used by merge_duplicate_assets when the duplicate's URL is being replaced wholesale
      * by the original's URL. Same DOM-based + per-post-revision discipline as the
-     * filename rewriter — never preg_replace on post_content.
+     * filename rewriter â€” never preg_replace on post_content.
      */
     private function sync_url_references( $old_url, $new_url, $dry_run = false ) {
         if ( ! class_exists( 'WP_HTML_Tag_Processor' ) ) {
@@ -600,7 +600,7 @@ class TIMU_IC {
      * Walk an HTML blob and rewrite img/src + a/href filename basenames safely.
      *
      * Only rewrites when the host matches site host (or URL is relative) and the
-     * basename matches old → new with the optional -WxH WP thumbnail suffix.
+     * basename matches old â†’ new with the optional -WxH WP thumbnail suffix.
      */
     private function rewrite_references_in_html( $html, $old_base, $old_ext, $new_base, $new_ext ) {
         $hits      = array();
@@ -624,7 +624,7 @@ class TIMU_IC {
             $hits[] = $url;
             $processor->set_attribute( $attr, $rewritten );
 
-            // <img> also commonly has srcset — rewrite its basenames too.
+            // <img> also commonly has srcset â€” rewrite its basenames too.
             if ( 'img' === $tag ) {
                 $srcset = $processor->get_attribute( 'srcset' );
                 if ( is_string( $srcset ) && '' !== $srcset ) {
@@ -751,7 +751,7 @@ class TIMU_IC {
     /**
      * Walk attachments via WP_Query (NOT the filesystem) looking for ones whose original
      * filename has a matching .webp on disk. Drops the assumption that uploads/ uses the
-     * default YYYY/MM tree — flat layouts, custom uploads_use_yearmonth_folders, and CDN
+     * default YYYY/MM tree â€” flat layouts, custom uploads_use_yearmonth_folders, and CDN
      * offload plugins all break the previous scandir() pass.
      */
     private function sync_webp_from_filesystem( $dry_run = false ) {
@@ -831,7 +831,7 @@ class TIMU_IC {
             return true;
         }
 
-        // 1. Backup the original (skip if a backup already exists — never overwrite).
+        // 1. Backup the original (skip if a backup already exists â€” never overwrite).
         $backup_path = $this->backup_dir . $old_basename;
         if ( ! file_exists( $backup_path ) ) {
             if ( ! @copy( $source_path, $backup_path ) ) {
@@ -851,7 +851,7 @@ class TIMU_IC {
             return false;
         }
         if ( ! @unlink( $source_path ) ) {
-            // Source unlink failed — destination has the file, source still exists. Clean up dest
+            // Source unlink failed â€” destination has the file, source still exists. Clean up dest
             // and bail rather than leave duplicate physical files behind.
             @unlink( $new_path );
             return false;
@@ -906,8 +906,8 @@ class TIMU_IC {
         }
 
         // Defer term counting + suspend cache invalidation around the batch. These two
-        // wrappers keep a 5–50-attachment batch from hammering the cache and forcing
-        // an O(N²) term recount on every save.
+        // wrappers keep a 5â€“50-attachment batch from hammering the cache and forcing
+        // an O(NÂ²) term recount on every save.
         wp_defer_term_counting( true );
         wp_suspend_cache_invalidation( true );
 
@@ -947,7 +947,7 @@ class TIMU_IC {
                     if ( ! $ok ) {
                         echo '<li>' . sprintf(
                             /* translators: %d attachment ID */
-                            esc_html__( 'I/O failure on #%d — file not renamed, attachment unchanged. See server error log.', 'thisismyurl-image-support' ),
+                            esc_html__( 'I/O failure on #%d â€” file not renamed, attachment unchanged. See server error log.', 'thisismyurl-image-support' ),
                             absint( $t->ID )
                         ) . '</li>';
                         continue;
@@ -989,7 +989,7 @@ class TIMU_IC {
      *
      * Now strictly POST via admin-post.php. The previous GET-based handler made every
      * authenticated admin click a state-changing action vulnerable to a single
-     * crafted <img src="…?restore=…"> on any admin page. POST + nonce + capability
+     * crafted <img src="â€¦?restore=â€¦"> on any admin page. POST + nonce + capability
      * brings this in line with WP REST mutation discipline.
      *
      * Verifies byte-length match between source and copied destination BEFORE deleting
@@ -1070,7 +1070,7 @@ class TIMU_IC {
 
     /**
      * Hide sister-plugin submenu entries so the Tools sidebar doesn't carry three
-     * near-duplicate links. Filterable — operators can pass an empty array to disable.
+     * near-duplicate links. Filterable â€” operators can pass an empty array to disable.
      */
     public function cleanup_menus() {
         $defaults = array( 'thisismyurl-webp-support', 'thisismyurl-heic-support' );
@@ -1136,7 +1136,7 @@ class TIMU_IC {
                         <?php wp_nonce_field( 'thisismyurl_image_support_action', 'thisismyurl_image_support_nonce' ); ?>
                         <p>
                             <label for="batch_limit"><strong><?php esc_html_e( 'Images per Batch:', 'thisismyurl-image-support' ); ?></strong></label>
-                            <input type="number" id="batch_limit" name="batch_limit" value="<?php echo esc_attr( $user_batch ); ?>" min="1" max="50" style="width: 80px;">
+                            <input type="number" id="batch_limit" name="batch_limit" value="<?php echo esc_attr( $user_batch ); ?>" min="1" max="50" style="width: 100%;">
                             <span class="description"><?php esc_html_e( 'Max 50 per run.', 'thisismyurl-image-support' ); ?></span>
                         </p>
                         <div style="display: flex; gap: 10px;">
