@@ -6,7 +6,7 @@ Donate link: https://thisismyurl.com/donate/
 Support Link: https://thisismyurl.com/contact/
 Tags: webp, media, images, optimization, filenames
 Requires at least: 6.4
-Tested up to: 6.8
+Tested up to: 6.9
 Requires PHP: 8.1
 Stable tag: 0.6124
 License: GPLv2 or later

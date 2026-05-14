@@ -1,25 +1,26 @@
-﻿<?php
+<?php
 /**
- * Author:      Christopher Ross
- * Author URI:  https://thisismyurl.com/
  * Plugin Name: Image Support by thisismyurl.com
  * Plugin URI:  https://thisismyurl.com/thisismyurl-image-support/
- * Donate link: https://thisismyurl.com/donate/
- * Description: Advanced image sanitization, duplicate merging, WebP filesystem discovery, and deep content re-syncing. Destructive â€” requires opt-in via the "Confirm destructive operations" option before any rename, merge, or post_content rewrite runs.
+ * Description: Advanced image sanitization, duplicate merging, WebP filesystem discovery, and deep content re-syncing. Destructive - requires opt-in via the "Confirm destructive operations" option before any rename, merge, or post_content rewrite runs.
  * Version:     0.6124
  * Requires at least: 6.4
  * Requires PHP: 8.1
- * Update URI: https://github.com/thisismyurl/thisismyurl-image-support
+ * Author:      Christopher Ross
+ * Author URI:  https://thisismyurl.com/
+ * License:     GPL-2.0-or-later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: thisismyurl-image-support
  * Domain Path: /languages
- * License: GPLv2 or later
- * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Network: false
+ * Update URI:  https://github.com/thisismyurl/thisismyurl-image-support
+ * Network:     false
  *
  * @package TIMU_Image_Support
  */
 
-if ( ! defined( 'ABSPATH' ) ) exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 
 class TIMU_IC {
 
