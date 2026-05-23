@@ -2,13 +2,13 @@
 Contributors: thisismyurl
 Author: Christopher Ross
 Author URI: https://thisismyurl.com/
-Donate link: https://thisismyurl.com/donate/
+Donate link: https://github.com/sponsors/thisismyurl
 Support Link: https://thisismyurl.com/contact/
 Tags: webp, media, images, optimization, filenames
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 0.6124
+Stable tag: 1.6143
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -93,6 +93,10 @@ Code contributions are welcome and genuinely valuable:
 I review PRs thoughtfully and appreciate well-tested contributions. Contributing is never required, but it's genuinely helpful.
 
 == Changelog ==
+
+= 1.6143 =
+* First full release (class 1). The 0.6xxx line was pre-release on the `x.Yddd` scheme.
+* Standardized the donation link to GitHub Sponsors.
 
 = 0.6124 =
 * Quality: version bump to match the `x.Yddd` scheme on Julian day 124 (2026-05-04). No code changes from 0.6123.

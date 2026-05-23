@@ -3,7 +3,7 @@
  * Plugin Name: Image Support by thisismyurl.com
  * Plugin URI:  https://thisismyurl.com/thisismyurl-image-support/
  * Description: Advanced image sanitization, duplicate merging, WebP filesystem discovery, and deep content re-syncing. Destructive - requires opt-in via the "Confirm destructive operations" option before any rename, merge, or post_content rewrite runs.
- * Version:     0.6124
+ * Version:     1.6143
  * Requires at least: 6.4
  * Requires PHP: 8.1
  * Author:      Christopher Ross
