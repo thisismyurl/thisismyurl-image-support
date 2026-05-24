@@ -4,21 +4,25 @@ Author: Christopher Ross
 Author URI: https://thisismyurl.com/
 Donate link: https://github.com/sponsors/thisismyurl
 Support Link: https://thisismyurl.com/contact/
-Tags: webp, media, images, optimization, filenames
+Tags: webp, media, images, optimization, filenames, photo credits, attribution, alt text, accessibility
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.6143
+Stable tag: 1.6144
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Clean up image filenames, discover matching WebP files, update content references, and keep backups of renamed originals.
+Clean up image filenames, discover matching WebP files, add photo-credit attribution and alt-text fallbacks, and keep backups of renamed originals.
 
 == Description ==
 
-**This plugin is destructive by design.** It renames attachment files on disk, merges duplicate attachments, and rewrites references inside `wp_posts.post_content`. Run a dry-run first on every batch. Take a database backup before flipping the destructive-ops switch. Backups of originals land in `/wp-content/uploads/timu-image-backups/` and that directory is hardened (`.htaccess`, `index.html`, `web.config`) so it is never directory-listable.
+Image Support groups two kinds of feature, and it matters which is which:
 
-Image Support helps site owners tidy up WordPress media filenames and keep content references in sync.
+**The cleanup features are destructive by design.** Filename sanitization, duplicate merging, and content re-syncing rename attachment files on disk, merge duplicate attachments, and rewrite references inside `wp_posts.post_content`. These run ONLY after you tick the "Confirm destructive operations" option. Run a dry-run first on every batch. Take a database backup before flipping the switch. Backups of originals land in `/wp-content/uploads/timu-image-backups/` and that directory is hardened (`.htaccess`, `index.html`, `web.config`) so it is never directory-listable.
+
+**The photo-credit and alt-text features are benign.** They read and write their own attachment meta and append markup to rendered image blocks. They never rename files, merge attachments, or rewrite `post_content` — installing the plugin for photo credits will not touch your files or your content, and the destructive-ops switch has no effect on them.
+
+Image Support helps site owners tidy up WordPress media filenames, keep content references in sync, attribute their imagery, and meet alt-text accessibility expectations.
 
 Features include:
 
@@ -29,8 +33,11 @@ Features include:
 * DOM-based content reference replacement when filenames change. Uses `WP_HTML_Tag_Processor` (WP 6.2+); rewrites `<img src>`, `<a href>`, and `<img srcset>` only, host-checked against the site URL, with a per-post revision snapshot taken before any update.
 * Backups of original files before renaming. Restore is gated by capability, nonce, and POST (admin-post.php) — never GET.
 * Redirect support for requests that still hit old image paths.
+* A developer surface: WP-CLI commands (`wp image-support sanitize|relink|status`), action hooks bracketing each rename and relink, and filters at every meaningful decision point (master enable gate, filename slug rule, per-attachment process gate, relink scope and statuses, processable MIME types).
+* Photo-credit attribution (benign). Seven attachment-meta fields — credit name, credit link, AI-generated flag and model, AI-edit flag and model, and composite flag — surfaced through an attachment-edit meta box and a `core/image` block-editor sidebar panel. A render filter appends a `.photo-credit` line to the image's figcaption ("Photograph by …", "AI direction by … • model", "Composite by …"), with bundled CSS so it renders without a supporting theme. IPTC By-Line / Credit / Copyright pre-fill on upload, and full schema.org/ImageObject `creditText` / `creator` / `copyrightHolder` output for any consumer that reads the meta. `wp image-support photo-credit backfill` sweeps existing attachments; `ai-hero-report` surfaces pipeline AI heroes for editorial review.
+* Alt-text accessibility fallback (benign). A filter on `wp_get_attachment_image_attributes` fills an empty `alt` from the attachment's stored alt meta, then its title, then a humanised filename. Decorative images (`data-decorative`) are left silent.
 
-The plugin adds a single tools screen under Tools > Image Support where you can preview a batch of changes, toggle the destructive-ops switch, or apply changes.
+The plugin adds a single tools screen under Tools > Image Support where you can preview a batch of changes, toggle the destructive-ops switch, or apply changes. The photo-credit and alt-text features need no setup — they activate on plugin activation and do nothing until an attachment has credit data or a rendered image is missing its alt.
 
 == Installation ==
 
@@ -61,7 +68,16 @@ Yes, but generation is asynchronous and opt-in. If a matching WebP file is missi
 Because filename renaming, duplicate merging, and `post_content` rewriting are not reversible without the per-post revisions and backup files this plugin produces. The switch makes the destructive nature explicit; the dry-run path always works without it.
 
 = Does it have settings, logs, or ALT text tools? =
-Settings: the destructive-ops switch. No logs or ALT text tools yet.
+Settings: the destructive-ops switch (cleanup only). The plugin includes an alt-text fallback that fills an empty `alt` attribute from the attachment's stored alt meta, its title, or a humanised filename — no setup required. No logs yet.
+
+= Will installing this for photo credits rename my files or change my content? =
+No. The photo-credit and alt-text features are benign: they read and write their own attachment meta and append a credit line to rendered image blocks. They never rename files, merge attachments, or rewrite `post_content`, and the destructive-ops switch does not affect them. The destructive behaviour is confined to the filename-cleanup, duplicate-merge, and content-resync features, which run only after you opt in.
+
+= How do I add a photo credit? =
+Open any attachment in the Media Library and fill the "Photo credit" meta box, or select a `core/image` block in the editor and use the "Photo credit" panel in the sidebar. Both write the same attachment meta, so a value set in one shows up in the other. Credits render as a line in the image's figcaption on the front end; leave the fields blank to render nothing. Existing uploads can be swept for IPTC By-Line / Credit data with `wp image-support photo-credit backfill`.
+
+= Are there hooks and filters for developers? =
+Yes. The cleanup pipeline can be disabled programmatically with the `thisismyurl_image_support_enabled` filter (default true) without deactivating the plugin. The filename slug rule (`thisismyurl_image_support_sanitized_filename`), the per-attachment process gate (`thisismyurl_image_support_should_process`), the relink scope (`thisismyurl_image_support_relink_post_types`, `thisismyurl_image_support_relink_post_statuses`), and the processable MIME list (`thisismyurl_image_support_processable_mime_types`) are all filterable. Action hooks bracket every rename (`thisismyurl_image_support_before_rename`, `_after_rename`, `_filename_sanitized`, `_rename_failed`) and fire after each relink (`thisismyurl_image_support_content_relinked`). The earlier `thisismyurl_image_support_enable_dynamic_webp` and `thisismyurl_image_support_hide_submenus` filters are unchanged. WP-CLI commands `wp image-support sanitize`, `wp image-support relink`, and `wp image-support status` script the same operations, with `--dry-run` and capability checks on the mutating ones. See README.md for the full reference.
 
 == Support, Contributing & Sponsorship ==
 
@@ -73,7 +89,7 @@ If they're helpful, here are genuine ways to support the work:
 
 * **Sponsor this project:** Visit https://github.com/sponsors/thisismyurl if sponsorship fits your budget. Sponsorship helps, but it's always optional.
 * **Contribute code or ideas:** Opening a pull request, reporting an issue, or testing edge cases is just as valuable as sponsorship. Helping me improve these plugins is a great way to contribute.
-* **Share your experience:** A review on my [Google My Business profile](https://business.google.com/refer) or a follow on [WordPress.org](https://profiles.wordpress.org/thisismyurl/), [GitHub](https://github.com/thisismyurl), or [LinkedIn](https://linkedin.com/in/thisismyurl) helps others find this work.
+* **Share your experience:** A follow on [WordPress.org](https://profiles.wordpress.org/thisismyurl/), [GitHub](https://github.com/thisismyurl), or [LinkedIn](https://linkedin.com/in/thisismyurl) helps others find this work.
 
 = I found a bug or have a feature idea =
 
@@ -93,6 +109,19 @@ Code contributions are welcome and genuinely valuable:
 I review PRs thoughtfully and appreciate well-tested contributions. Contributing is never required, but it's genuinely helpful.
 
 == Changelog ==
+
+= 1.6144 =
+* Developer surface: added the master gate filter `thisismyurl_image_support_enabled` (default true) at the cleanup chokepoint — both the admin batch and the new CLI batch honour it. Recovery (restore from backup) deliberately stays ungated.
+* Developer surface: added decision-point filters — `thisismyurl_image_support_sanitized_filename` (slug rule), `thisismyurl_image_support_should_process` (per-attachment gate), `thisismyurl_image_support_relink_post_types` and `thisismyurl_image_support_relink_post_statuses` (relink scope, extracted from two inline copies), and `thisismyurl_image_support_processable_mime_types` (which formats the batch will rename).
+* Developer surface: added lifecycle actions — `thisismyurl_image_support_before_rename`, `thisismyurl_image_support_after_rename`, `thisismyurl_image_support_filename_sanitized` (success, old + new), `thisismyurl_image_support_rename_failed` (failure), and `thisismyurl_image_support_content_relinked` (with the matched-reference report and write-allowed flag).
+* Developer surface: added WP-CLI commands `wp image-support sanitize` (rename + relink batch, `--all` / `--limit` / `--dry-run`), `wp image-support relink` (filesystem WebP discovery + content relink, `--dry-run`), and read-only `wp image-support status`. Mutating commands check `current_user_can( 'manage_options' )`, honour the enable gate, and refuse a non-dry-run unless destructive operations are confirmed.
+* Quality: extracted `process_image_update()` into a thin orchestrator over a `do_process_image_update()` worker so the rename lifecycle actions fire from one place while every existing error return is preserved verbatim.
+* Quality: the headless cleanup batch advances the walk cursor to the highest scanned attachment ID so an `--all` run always makes forward progress past skipped or failed attachments.
+* Feature: photo-credit attribution (benign — no files or content touched). Seven attachment-meta fields (credit, credit link, AI-generated flag + model, AI-edit flag + model, composite flag) registered for REST and the block editor, an attachment-edit meta box and a `core/image` sidebar panel sharing the same data, a render filter that appends a `.photo-credit` line to the figcaption, bundled CSS so it renders theme-independently, IPTC pre-fill on upload, and schema.org/ImageObject credit fields. WP-CLI: `wp image-support photo-credit backfill` and `ai-hero-report`. The auto-flag default credit is filterable (`thisismyurl_image_support_default_credit`, empty by default — nothing is invented).
+* Feature: alt-text accessibility fallback (benign). A `wp_get_attachment_image_attributes` filter fills an empty `alt` from stored alt meta → attachment title → humanised filename; decorative images (`data-decorative`) stay silent.
+* Docs: re-scoped the "destructive by design" framing so it applies only to the filename-cleanup / merge / content-resync features. The photo-credit and alt-text features are documented as benign and never consult the destructive-ops switch.
+* Build: rebuilt the `core/image` photo-credit editor bundle so its JavaScript text domain is `thisismyurl-image-support`, matching `wp_set_script_translations()` so the panel's strings are translatable under the plugin's own domain. Added reproducible `@wordpress/scripts` build tooling (`package.json`, `webpack.config.js`) that compiles the bundle from `assets/editor/photo-credit-panel.jsx`.
+* Quality: version bump to Julian day 144 (2026-05-24) under the `x.Yddd` scheme.
 
 = 1.6143 =
 * First full release (class 1). The 0.6xxx line was pre-release on the `x.Yddd` scheme.
@@ -127,6 +156,12 @@ I review PRs thoughtfully and appreciate well-tested contributions. Contributing
 * Legacy version string from a prior numbering scheme. Retained here only for archive context; superseded by 0.6123 onward.
 
 == Upgrade Notice ==
+
+= 1.6144 =
+Adds two benign features — photo-credit attribution and an alt-text accessibility fallback — plus a full developer surface (WP-CLI `wp image-support sanitize|relink|status`, action hooks, and filters). The new features never touch files or post content. The destructive-ops switch and the dry-run-first discipline are unchanged, and existing filters keep their names and signatures.
+
+= 1.6143 =
+First full release. The destructive-ops switch remains OFF by default — toggle it under Tools > Image Support > Settings before re-running write operations.
 
 = 0.6124 =
 Hygiene-only bump on top of the 0.6123 safety release. The destructive-ops switch remains OFF by default — toggle it under Tools > Image Support > Settings before re-running write operations.

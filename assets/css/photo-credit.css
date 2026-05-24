@@ -1,0 +1,42 @@
+/**
+ * Photo-credit styling.
+ *
+ * Bundled with the plugin so the `.photo-credit` span renders correctly
+ * regardless of the active theme. Theme custom properties are referenced with
+ * literal fallbacks (`var(--token, fallback)`) so the rule stands alone but
+ * defers to a theme's design tokens when those are defined.
+ *
+ * A theme that wants a different look can override the same selector with
+ * higher specificity; this is a sensible default, not a lock.
+ */
+
+.entry-content figcaption .photo-credit {
+	display: block;
+	margin-top: 0.3rem;
+	font-size: 0.6875rem;
+	font-style: italic;
+	letter-spacing: 0.03em;
+	color: var(--color-muted, #646970);
+	text-align: right;
+}
+
+.entry-content figcaption .photo-credit a {
+	color: inherit;
+	text-decoration: underline;
+	text-decoration-color: var(--color-border-strong, #8c8f94);
+	text-underline-offset: 2px;
+	text-decoration-thickness: 1px;
+	transition: text-decoration-color 0.15s ease;
+}
+
+.entry-content figcaption .photo-credit a:hover,
+.entry-content figcaption .photo-credit a:focus-visible {
+	text-decoration-color: var(--color-text-medium, #50575e);
+}
+
+@media (max-width: 480px) {
+	.entry-content figcaption .photo-credit {
+		font-size: 0.6875rem;
+		text-align: left;
+	}
+}

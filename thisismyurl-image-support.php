@@ -2,8 +2,8 @@
 /**
  * Plugin Name: This Is My URL - Image Support
  * Plugin URI:  https://thisismyurl.com/thisismyurl-image-support/
- * Description: Advanced image sanitization, duplicate merging, WebP filesystem discovery, and deep content re-syncing. Destructive - requires opt-in via the "Confirm destructive operations" option before any rename, merge, or post_content rewrite runs.
- * Version:     1.6143
+ * Description: Image filename cleanup, duplicate merging, WebP discovery, photo-credit attribution, and alt-text accessibility fallback. The cleanup/merge features are destructive and require opt-in via the "Confirm destructive operations" option before any rename, merge, or post_content rewrite runs; the photo-credit and alt-fallback features are benign and never touch files or post content.
+ * Version:     1.6144
  * Requires at least: 6.4
  * Requires PHP: 8.1
  * Author:      Christopher Ross
@@ -21,6 +21,31 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
+
+/**
+ * Plugin version, filesystem path, and URL. Read by the feature modules below
+ * for asset enqueuing and cache-busting. Kept in sync with the `Version:`
+ * header above by the release process.
+ */
+define( 'TIMU_IMAGE_SUPPORT_VERSION', '1.6144' );
+define( 'TIMU_IMAGE_SUPPORT_DIR', plugin_dir_path( __FILE__ ) );
+define( 'TIMU_IMAGE_SUPPORT_URL', plugin_dir_url( __FILE__ ) );
+
+/**
+ * Feature modules. Each is self-contained — registers its own hooks on load.
+ *
+ *   - photo-credits.php        Attachment credit meta, render filter, IPTC
+ *                              pre-fill, bundled CSS, and the WP-CLI commands.
+ *   - photo-credits-admin.php  Attachment-edit meta box + block-editor panel.
+ *   - image-alt-fallback.php   Three-tier alt-text fallback on render.
+ *
+ * These are benign: they never rename files, merge attachments, or rewrite
+ * post_content. The destructive cleanup pipeline lives in the TIMU_IC class
+ * below and stays gated behind its own opt-in option.
+ */
+require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/photo-credits.php';
+require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/photo-credits-admin.php';
+require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/image-alt-fallback.php';
 
 class TIMU_IC {
 
@@ -44,6 +69,11 @@ class TIMU_IC {
 
         $upload_dir       = wp_upload_dir();
         $this->backup_dir = trailingslashit( $upload_dir['basedir'] ) . 'timu-image-backups/';
+
+        if ( defined( 'WP_CLI' ) && WP_CLI ) {
+            require_once plugin_dir_path( __FILE__ ) . 'includes/class-timu-image-support-cli.php';
+            \WP_CLI::add_command( 'image-support', 'TIMU_Image_Support_CLI' );
+        }
     }
 
     public function load_textdomain() {
@@ -347,7 +377,73 @@ class TIMU_IC {
             $name      = $parent_id ? sanitize_title( get_the_title( $parent_id ) ) : 'asset-' . absint( $post_id );
         }
 
-        return trim( (string) $name, '-' ) . '.' . $ext;
+        $sanitized = trim( (string) $name, '-' ) . '.' . $ext;
+
+        /**
+         * Filter the sanitized filename produced for a renamed attachment.
+         *
+         * This resolver sits at the single point every rename slug flows through,
+         * so a developer can adjust the slug rule (a custom transliteration, a
+         * site-specific prefix, a different fallback) for every caller with one
+         * filter and no duplication. Returning a value that fails the plugin's own
+         * validation downstream is the developer's responsibility; the value is
+         * used verbatim. Returning false short-circuits the rename for this
+         * attachment exactly as a native validation failure would.
+         *
+         * @since 1.6144
+         *
+         * @param string|false $sanitized Resolved filename ("slug.ext"), or false on validation failure.
+         * @param string       $filename  Original source filename passed in.
+         * @param int          $post_id   Attachment ID being processed.
+         */
+        return apply_filters( 'thisismyurl_image_support_sanitized_filename', $sanitized, $filename, $post_id );
+    }
+
+    /**
+     * Master gate for the plugin's cleanup behaviour.
+     *
+     * Returning false from the filter disables the rename/relink/merge pipeline
+     * (and the CLI batch that funnels through it) without deactivating the
+     * plugin, so an operator can switch it off per environment or per context.
+     * Recovery — restore from backup — deliberately does NOT consult this gate;
+     * disabling cleanup must never disable the ability to roll back.
+     *
+     * @return bool
+     */
+    public function is_enabled() {
+        /**
+         * Filter whether Image Support's cleanup pipeline is enabled.
+         *
+         * @since 1.6144
+         *
+         * @param bool $enabled Whether cleanup is enabled. Default true.
+         */
+        return (bool) apply_filters( 'thisismyurl_image_support_enabled', true );
+    }
+
+    /**
+     * Per-attachment decision gate: should this image be renamed/relinked?
+     *
+     * Distinct from the master gate — this fires once per attachment with the
+     * source path in hand, so a developer can exclude individual attachments by
+     * ID, path, or any metadata they look up. Returning false skips the image.
+     *
+     * @param int    $attachment_id Attachment being considered.
+     * @param string $source_path   Absolute current file path.
+     *
+     * @return bool
+     */
+    private function should_process_attachment( $attachment_id, $source_path ) {
+        /**
+         * Filter whether a single attachment is processed by the cleanup batch.
+         *
+         * @since 1.6144
+         *
+         * @param bool   $should        Whether to process. Default true.
+         * @param int    $attachment_id Attachment being considered.
+         * @param string $source_path   Absolute current file path.
+         */
+        return (bool) apply_filters( 'thisismyurl_image_support_should_process', true, $attachment_id, $source_path );
     }
 
     /**
@@ -361,6 +457,18 @@ class TIMU_IC {
             'thisismyurl_image_support_confirm_destructive',
             (bool) get_option( 'thisismyurl_image_support_confirm_destructive', false )
         );
+    }
+
+    /**
+     * Public read-only accessor for the destructive-ops confirmation state.
+     *
+     * Lets scripted callers (WP-CLI) check the opt-in without flipping it, so a
+     * non-dry-run command can refuse cleanly rather than silently no-op.
+     *
+     * @return bool
+     */
+    public function is_destructive_confirmed() {
+        return $this->destructive_ops_confirmed();
     }
 
     /**
@@ -457,6 +565,7 @@ class TIMU_IC {
         $new_base        = $new_info['filename'];
         $new_ext         = strtolower( $new_info['extension'] );
         $allowed_post_types = $this->candidate_post_types();
+        $allowed_statuses   = $this->relink_post_statuses();
         $writes_allowed  = ! $dry_run && $this->destructive_ops_confirmed();
 
         $paged   = 1;
@@ -467,7 +576,7 @@ class TIMU_IC {
             $query = new WP_Query(
                 array(
                     'post_type'      => $allowed_post_types,
-                    'post_status'    => array( 'publish', 'private', 'draft', 'future', 'pending' ),
+                    'post_status'    => $allowed_statuses,
                     'posts_per_page' => $batch,
                     'paged'          => $paged,
                     'fields'         => 'ids',
@@ -517,7 +626,25 @@ class TIMU_IC {
             --$max_loops;
         } while ( $max_loops > 0 );
 
-        return array_values( array_unique( $report ) );
+        $report = array_values( array_unique( $report ) );
+
+        /**
+         * Fires after a filename's references are rewritten across post_content.
+         *
+         * On a dry run the URLs are reported without being written; the
+         * `$writes_allowed` flag distinguishes the two so a listener can log a
+         * preview separately from an applied change.
+         *
+         * @since 1.6144
+         *
+         * @param string $old_filename   Source basename.
+         * @param string $new_filename   Target basename.
+         * @param array  $report         Unique source URLs that matched.
+         * @param bool   $writes_allowed Whether changes were actually written.
+         */
+        do_action( 'thisismyurl_image_support_content_relinked', $old_filename, $new_filename, $report, $writes_allowed );
+
+        return $report;
     }
 
     /**
@@ -540,6 +667,7 @@ class TIMU_IC {
         $report          = array();
         $writes_allowed  = ! $dry_run && $this->destructive_ops_confirmed();
         $allowed_post_types = $this->candidate_post_types();
+        $allowed_statuses   = $this->relink_post_statuses();
         $needle          = wp_basename( wp_parse_url( $old_url, PHP_URL_PATH ) );
         if ( '' === $needle ) {
             return array();
@@ -553,7 +681,7 @@ class TIMU_IC {
             $query = new WP_Query(
                 array(
                     'post_type'      => $allowed_post_types,
-                    'post_status'    => array( 'publish', 'private', 'draft', 'future', 'pending' ),
+                    'post_status'    => $allowed_statuses,
                     'posts_per_page' => $batch,
                     'paged'          => $paged,
                     'fields'         => 'ids',
@@ -742,11 +870,75 @@ class TIMU_IC {
     /**
      * Candidate post types for content-reference rewrites: every public type plus
      * the registered private ones that hold body copy. Excludes attachments and revisions.
+     *
+     * This is the single resolver for the relink scope. Both the filename rewriter
+     * and the URL rewriter read it, so a developer can widen or narrow the set of
+     * post types whose `post_content` is searched and rewritten with one filter.
+     *
+     * @return string[]
      */
     private function candidate_post_types() {
         $types = get_post_types( array( 'public' => true ), 'names' );
         unset( $types['attachment'] );
-        return array_values( $types );
+
+        /**
+         * Filter the post types whose content is searched and rewritten on relink.
+         *
+         * @since 1.6144
+         *
+         * @param string[] $types Post-type slugs. Defaults to public types minus attachments.
+         */
+        $types = apply_filters( 'thisismyurl_image_support_relink_post_types', array_values( $types ) );
+
+        return is_array( $types ) ? array_values( $types ) : array();
+    }
+
+    /**
+     * Post statuses the relink pass searches when rewriting content references.
+     *
+     * Extracted into a resolver because the same status list was previously
+     * hard-coded inline in both rewriters; one filter now covers both.
+     *
+     * @return string[]
+     */
+    private function relink_post_statuses() {
+        $statuses = array( 'publish', 'private', 'draft', 'future', 'pending' );
+
+        /**
+         * Filter the post statuses included in the relink query.
+         *
+         * @since 1.6144
+         *
+         * @param string[] $statuses Post statuses searched for rewritable references.
+         */
+        $statuses = apply_filters( 'thisismyurl_image_support_relink_post_statuses', $statuses );
+
+        return is_array( $statuses ) ? array_values( $statuses ) : array( 'publish' );
+    }
+
+    /**
+     * MIME types the cleanup batch is willing to rename.
+     *
+     * The hardening list that decides which attachments the pipeline will touch.
+     * A developer can drop a format (skip GIFs, say) or add one their build can
+     * encode without editing the loop. Returned values are matched against
+     * `post_mime_type` in handle_cleanup().
+     *
+     * @return string[]
+     */
+    private function processable_mime_types() {
+        $mimes = array( 'image/jpeg', 'image/png', 'image/gif', 'image/webp' );
+
+        /**
+         * Filter the attachment MIME types eligible for rename/relink.
+         *
+         * @since 1.6144
+         *
+         * @param string[] $mimes Allowed source MIME types.
+         */
+        $mimes = apply_filters( 'thisismyurl_image_support_processable_mime_types', $mimes );
+
+        return is_array( $mimes ) ? array_values( $mimes ) : array( 'image/jpeg' );
     }
 
     /**
@@ -813,12 +1005,89 @@ class TIMU_IC {
     }
 
     /**
+     * Rename an attachment's underlying file and bracket the operation with its
+     * lifecycle hooks.
+     *
+     * The file work lives in do_process_image_update(); this orchestrator owns the
+     * extension points so before/after/sanitized/failed fire from exactly one place
+     * each, while every error return inside the worker is preserved verbatim.
+     *
+     * @param int    $id          Attachment ID.
+     * @param string $source_path Absolute current file path.
+     * @param string $new_name    Sanitized target basename.
+     *
+     * @return bool True on success, false on any I/O failure.
+     */
+    private function process_image_update( $id, $source_path, $new_name ) {
+        $old_basename = basename( $source_path );
+
+        /**
+         * Fires immediately before an attachment file is renamed on disk.
+         *
+         * @since 1.6144
+         *
+         * @param int    $id           Attachment being renamed.
+         * @param string $source_path  Absolute current file path.
+         * @param string $new_name     Sanitized target basename.
+         * @param string $old_basename Current basename.
+         */
+        do_action( 'thisismyurl_image_support_before_rename', $id, $source_path, $new_name, $old_basename );
+
+        $new_path = '';
+        $ok       = $this->do_process_image_update( $id, $source_path, $new_name, $new_path );
+
+        if ( $ok ) {
+            /**
+             * Fires after an attachment file is successfully renamed.
+             *
+             * @since 1.6144
+             *
+             * @param int    $id           Attachment that was renamed.
+             * @param string $old_basename Previous basename.
+             * @param string $new_name     New basename now on disk.
+             * @param string $new_path     Absolute path of the renamed file.
+             */
+            do_action( 'thisismyurl_image_support_filename_sanitized', $id, $old_basename, $new_name, $new_path );
+        } else {
+            /**
+             * Fires when an attachment rename fails on an I/O error.
+             *
+             * @since 1.6144
+             *
+             * @param int    $id           Attachment that failed to rename.
+             * @param string $source_path  Absolute source path the rename started from.
+             * @param string $new_name     Target basename that was attempted.
+             */
+            do_action( 'thisismyurl_image_support_rename_failed', $id, $source_path, $new_name );
+        }
+
+        /**
+         * Fires after a rename attempt, on success or failure.
+         *
+         * @since 1.6144
+         *
+         * @param int    $id          Attachment that was processed.
+         * @param bool   $ok          Whether the rename succeeded.
+         * @param string $source_path Absolute source path the rename started from.
+         * @param string $new_name    Target basename that was attempted.
+         */
+        do_action( 'thisismyurl_image_support_after_rename', $id, $ok, $source_path, $new_name );
+
+        return $ok;
+    }
+
+    /**
      * Rename an attachment's underlying file with atomic write-to-temp + rename
      * and roll back the surrounding flow on failure.
      *
-     * Returns true on success, false on any I/O failure. Callers MUST check the return.
+     * @param int    $id          Attachment ID.
+     * @param string $source_path Absolute current file path.
+     * @param string $new_name    Sanitized target basename.
+     * @param string $new_path    Populated with the destination absolute path on success.
+     *
+     * @return bool True on success, false on any I/O failure. Callers MUST check the return.
      */
-    private function process_image_update( $id, $source_path, $new_name ) {
+    private function do_process_image_update( $id, $source_path, $new_name, &$new_path ) {
         require_once ABSPATH . 'wp-admin/includes/image.php';
         $upload_dir   = wp_upload_dir();
         $old_basename = basename( $source_path );
@@ -882,6 +1151,14 @@ class TIMU_IC {
     private function handle_cleanup( $dry_run = true, $limit = 5 ) {
         global $wpdb;
 
+        // Master gate. Returning false from the filter disables the cleanup
+        // pipeline (rename + relink + merge) without deactivating the plugin.
+        // The CLI batch honours the same filter at its own entry point.
+        if ( ! $this->is_enabled() ) {
+            echo '<li>' . esc_html__( 'Image Support is disabled by the thisismyurl_image_support_enabled filter.', 'thisismyurl-image-support' ) . '</li>';
+            return;
+        }
+
         // Enforce the destructive-ops gate at the front door for any non-dry-run.
         if ( ! $dry_run && ! $this->destructive_ops_confirmed() ) {
             echo '<li>' . esc_html__( 'Refusing to run: enable "Confirm destructive operations" in plugin settings or set the thisismyurl_image_support_confirm_destructive option to true. Dry-run still works.', 'thisismyurl-image-support' ) . '</li>';
@@ -913,13 +1190,17 @@ class TIMU_IC {
         wp_suspend_cache_invalidation( true );
 
         try {
-            $seen_names = array();
+            $seen_names      = array();
+            $processable_mimes = $this->processable_mime_types();
             foreach ( $targets as $t ) {
-                if ( ! in_array( $t->post_mime_type, array( 'image/jpeg', 'image/png', 'image/gif', 'image/webp' ), true ) ) {
+                if ( ! in_array( $t->post_mime_type, $processable_mimes, true ) ) {
                     continue;
                 }
                 $old_path = get_attached_file( $t->ID );
                 if ( ! $old_path || ! file_exists( $old_path ) ) {
+                    continue;
+                }
+                if ( ! $this->should_process_attachment( (int) $t->ID, $old_path ) ) {
                     continue;
                 }
                 $old_basename = basename( $old_path );
@@ -983,6 +1264,172 @@ class TIMU_IC {
             wp_suspend_cache_invalidation( false );
             wp_defer_term_counting( false );
         }
+    }
+
+    /**
+     * Headless cleanup batch for scripted callers (WP-CLI).
+     *
+     * Mirrors handle_cleanup()'s logic — same gate, same per-attachment workers,
+     * same destructive-ops discipline — but returns a structured result instead
+     * of echoing admin HTML. The same cursor option (`timu_ic_last_id`) advances
+     * so the CLI and the admin screen share one walk position. Lifecycle actions
+     * (before/after rename, filename_sanitized, content_relinked, rename_failed)
+     * fire from the shared private workers, so a listener sees CLI and admin runs
+     * identically.
+     *
+     * @param bool $dry_run When true, report only — no renames, merges, or rewrites.
+     * @param int  $limit   Attachments to walk this batch (clamped 1–50).
+     *
+     * @return array {
+     *     @type bool   $enabled    Whether the master gate allowed the run.
+     *     @type bool   $confirmed  Whether destructive ops are confirmed.
+     *     @type bool   $complete   True when the walk wrapped past the last attachment.
+     *     @type array  $renamed    [ id, from, to ] for each rename (or preview).
+     *     @type array  $merged     [ duplicate_id, original_id ] for each merge.
+     *     @type array  $skipped    [ id, reason ] for each skip.
+     *     @type array  $failed     [ id ] for each I/O failure.
+     *     @type int    $relinked   Total content references rewritten/previewed.
+     * }
+     */
+    public function run_cleanup_batch( $dry_run = true, $limit = 5 ) {
+        global $wpdb;
+
+        $result = array(
+            'enabled'   => $this->is_enabled(),
+            'confirmed' => $this->destructive_ops_confirmed(),
+            'complete'  => false,
+            'renamed'   => array(),
+            'merged'    => array(),
+            'skipped'   => array(),
+            'failed'    => array(),
+            'relinked'  => 0,
+        );
+
+        if ( ! $result['enabled'] ) {
+            return $result;
+        }
+
+        if ( ! $dry_run && ! $result['confirmed'] ) {
+            return $result;
+        }
+
+        $limit   = max( 1, min( 50, (int) $limit ) );
+        $last_id = $dry_run ? 0 : (int) get_option( 'timu_ic_last_id', 0 );
+        $targets = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT ID, post_name, post_mime_type FROM {$wpdb->posts} WHERE post_type = %s AND ID > %d ORDER BY ID ASC LIMIT %d",
+                'attachment',
+                $last_id,
+                $limit
+            )
+        );
+
+        if ( empty( $targets ) ) {
+            if ( ! $dry_run ) {
+                update_option( 'timu_ic_last_id', 0 );
+            }
+            $result['complete'] = true;
+            return $result;
+        }
+
+        wp_defer_term_counting( true );
+        wp_suspend_cache_invalidation( true );
+
+        try {
+            $seen_names        = array();
+            $processable_mimes = $this->processable_mime_types();
+            $max_scanned_id    = 0;
+
+            foreach ( $targets as $t ) {
+                // Track the highest ID we walked so the cursor can advance past
+                // skipped/failed/no-op attachments — otherwise a batch that
+                // renames nothing would never move the cursor and an --all walk
+                // would spin on the same page forever.
+                $max_scanned_id = max( $max_scanned_id, (int) $t->ID );
+
+                if ( ! in_array( $t->post_mime_type, $processable_mimes, true ) ) {
+                    continue;
+                }
+                $old_path = get_attached_file( $t->ID );
+                if ( ! $old_path || ! file_exists( $old_path ) ) {
+                    continue;
+                }
+                if ( ! $this->should_process_attachment( (int) $t->ID, $old_path ) ) {
+                    $result['skipped'][] = array( 'id' => (int) $t->ID, 'reason' => 'filtered' );
+                    continue;
+                }
+
+                $old_basename = basename( $old_path );
+                $new_name     = $this->sanitize_filename( $old_basename, $t->ID );
+                if ( false === $new_name ) {
+                    $result['skipped'][] = array( 'id' => (int) $t->ID, 'reason' => 'rejected-filename' );
+                    continue;
+                }
+
+                $clean_slug = pathinfo( $new_name, PATHINFO_FILENAME );
+                if ( isset( $seen_names[ $clean_slug ] ) ) {
+                    $this->merge_duplicate_assets( $t->ID, $seen_names[ $clean_slug ], $dry_run );
+                    $result['merged'][] = array(
+                        'duplicate_id' => (int) $t->ID,
+                        'original_id'  => (int) $seen_names[ $clean_slug ],
+                    );
+                    continue;
+                }
+                $seen_names[ $clean_slug ] = $t->ID;
+
+                $variations          = $this->sync_content_references( $old_basename, $new_name, $dry_run );
+                $result['relinked'] += count( $variations );
+
+                if ( $dry_run ) {
+                    $result['renamed'][] = array(
+                        'id'   => (int) $t->ID,
+                        'from' => $old_basename,
+                        'to'   => $new_name,
+                    );
+                    continue;
+                }
+
+                $this->backup_attachment_record( $t->ID );
+                if ( ! $this->process_image_update( $t->ID, $old_path, $new_name ) ) {
+                    $result['failed'][] = array( 'id' => (int) $t->ID );
+                    continue;
+                }
+                $result['renamed'][] = array(
+                    'id'   => (int) $t->ID,
+                    'from' => $old_basename,
+                    'to'   => $new_name,
+                );
+            }
+
+            // Advance the shared cursor to the highest ID scanned this batch so
+            // the next batch (CLI --all loop, or the admin screen) starts after it.
+            if ( ! $dry_run && $max_scanned_id > 0 ) {
+                update_option( 'timu_ic_last_id', $max_scanned_id );
+            }
+        } finally {
+            wp_suspend_cache_invalidation( false );
+            wp_defer_term_counting( false );
+        }
+
+        return $result;
+    }
+
+    /**
+     * Headless filesystem-WebP discovery for scripted callers (WP-CLI).
+     *
+     * Thin wrapper over sync_webp_from_filesystem() so the CLI can run the same
+     * discovery the admin screen runs. Honours the master gate.
+     *
+     * @param bool $dry_run When true, report only — no content rewrites.
+     *
+     * @return array Discovery rows: file, webp, dir, vars.
+     */
+    public function run_webp_discovery( $dry_run = true ) {
+        if ( ! $this->is_enabled() ) {
+            return array();
+        }
+
+        return $this->sync_webp_from_filesystem( $dry_run );
     }
 
     /**
@@ -1131,7 +1578,7 @@ class TIMU_IC {
             </div>
 
             <div class="postbox">
-                <h2 class="hndle"><span><?php esc_html_e( 'Image Optimization & Deep Sync', 'thisismyurl-image-support' ); ?></span></h2>
+                <h2 class="hndle"><span><?php esc_html_e( 'Cleanup & WebP Sync', 'thisismyurl-image-support' ); ?></span></h2>
                 <div class="inside">
                     <form method="post">
                         <?php wp_nonce_field( 'thisismyurl_image_support_action', 'thisismyurl_image_support_nonce' ); ?>

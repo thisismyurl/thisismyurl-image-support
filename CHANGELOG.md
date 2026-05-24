@@ -1,8 +1,26 @@
 # Changelog
 
-All notable changes to **Image Support by thisismyurl.com** are documented here.
+All notable changes to **This Is My URL - Image Support** are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses the `x.Yddd` versioning scheme: `x` = release class (0 = pre-release, 1 = full), `Y` = last digit of year, `ddd` = Julian day.
+
+## [1.6144] - 2026-05-24
+
+### Added
+- **Photo-credit attribution (benign — never touches files or `post_content`).** Seven attachment-meta fields — credit name, credit link, AI-generated flag and model, AI-edit flag and model, and a composite flag — registered for REST and the block editor. An attachment-edit meta box and a `core/image` block-editor sidebar panel share the same data. A render filter appends a `.photo-credit` line to the image's figcaption ("Photograph by …", "AI direction by … • model", "Composite by …") with bundled CSS so it renders without a supporting theme. IPTC By-Line / Credit / Copyright pre-fill on upload, and full schema.org/ImageObject `creditText` / `creator` / `copyrightHolder` output. The auto-applied default credit is filterable via `thisismyurl_image_support_default_credit` (empty by default — nothing is invented).
+- **Alt-text accessibility fallback (benign).** A `wp_get_attachment_image_attributes` filter fills an empty `alt` from stored alt meta, then attachment title, then a humanised filename. Images marked `data-decorative` are left silent for screen readers.
+- **WP-CLI surface.** `wp image-support sanitize` (rename + relink batch, `--all` / `--limit` / `--dry-run`), `wp image-support relink` (filesystem WebP discovery + content relink, `--dry-run`), read-only `wp image-support status`, and `wp image-support photo-credit backfill` / `ai-hero-report`. Mutating commands check `current_user_can( 'manage_options' )`, honour the master enable gate, and refuse a non-dry-run unless destructive operations are confirmed — they never silently no-op.
+- **Master enable gate filter `thisismyurl_image_support_enabled`** (default `true`) at the cleanup chokepoint. Both the admin batch and the CLI batch honour it; restore from backup deliberately stays ungated.
+- **Decision-point filters.** `thisismyurl_image_support_sanitized_filename` (slug rule), `thisismyurl_image_support_should_process` (per-attachment gate), `thisismyurl_image_support_relink_post_types` and `thisismyurl_image_support_relink_post_statuses` (relink scope, extracted from two inline copies into shared resolvers), and `thisismyurl_image_support_processable_mime_types` (which formats the batch will rename).
+- **Lifecycle actions.** `thisismyurl_image_support_before_rename`, `thisismyurl_image_support_after_rename`, `thisismyurl_image_support_filename_sanitized` (success, old + new + path), `thisismyurl_image_support_rename_failed` (failure), and `thisismyurl_image_support_content_relinked` (with the matched-reference report and the write-allowed flag).
+- **Reproducible build tooling.** `@wordpress/scripts` (`package.json`, `package-lock.json`, `webpack.config.js`) compiles the `core/image` photo-credit editor bundle from `assets/editor/photo-credit-panel.jsx`. `.gitignore` added; `.distignore` updated so `webpack.config.js` and `assets/editor` are excluded from the .org build zip.
+- **`TIMU_IMAGE_SUPPORT_VERSION` / `_DIR` / `_URL` constants** read by the feature modules for asset enqueuing and cache-busting.
+
+### Changed
+- **`process_image_update()` split into a thin orchestrator over a `do_process_image_update()` worker** so the rename lifecycle actions fire from exactly one place each while every existing error return is preserved verbatim.
+- **Admin section heading renamed** from "Image Optimization & Deep Sync" to "Cleanup & WebP Sync".
+- **The headless cleanup batch advances the walk cursor to the highest scanned attachment ID** so an `--all` run always makes forward progress past skipped, failed, or no-op attachments.
+- **Plugin Description re-scoped** so the "destructive by design" framing applies only to filename cleanup, merge, and content re-sync; photo-credit and alt-text are documented as benign and never consult the destructive-ops switch.
 
 ## [1.6143] — 2026-05-23
 
