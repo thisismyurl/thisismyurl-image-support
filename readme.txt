@@ -1,4 +1,4 @@
-=== Image Support by thisismyurl ===
+=== This Is My URL - Image Support ===
 Contributors: thisismyurl
 Author: Christopher Ross
 Author URI: https://thisismyurl.com/

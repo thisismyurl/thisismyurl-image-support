@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: Image Support by thisismyurl.com
+ * Plugin Name: This Is My URL - Image Support
  * Plugin URI:  https://thisismyurl.com/thisismyurl-image-support/
  * Description: Advanced image sanitization, duplicate merging, WebP filesystem discovery, and deep content re-syncing. Destructive - requires opt-in via the "Confirm destructive operations" option before any rename, merge, or post_content rewrite runs.
  * Version:     1.6143
@@ -1172,7 +1172,10 @@ class TIMU_IC {
 
     public function add_plugin_action_links( $links ) {
         return array_merge(
-            array( '<a href="' . esc_url( admin_url( 'tools.php?page=thisismyurl-image-support' ) ) . '">' . esc_html__( 'Settings', 'thisismyurl-image-support' ) . '</a>' ),
+            array(
+                '<a href="' . esc_url( admin_url( 'tools.php?page=thisismyurl-image-support' ) ) . '">' . esc_html__( 'Settings', 'thisismyurl-image-support' ) . '</a>',
+                '<a href="' . esc_url( 'https://github.com/sponsors/thisismyurl' ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Sponsor', 'thisismyurl-image-support' ) . '</a>',
+            ),
             $links
         );
     }
