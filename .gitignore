@@ -1,0 +1,30 @@
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~
+
+# Logs
+*.log
+debug.log
+
+# Node build tooling (devDependencies only; the compiled bundle in
+# assets/build/ IS committed and ships with the plugin — do NOT ignore it).
+node_modules/
+npm-debug.log*
+
+# Composer dev-only artifacts inside vendor/ — keep runtime deps tracked.
+vendor/bin/
+vendor/squizlabs/
+vendor/wp-coding-standards/
+vendor/phpcompatibility/
+vendor/phpcsstandards/
+vendor/dealerdirect/
+
+# PHPCS / PHPUnit caches
+.phpcs-cache
+.phpunit.result.cache
+phpunit.html
+build/coverage

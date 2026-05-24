@@ -14,8 +14,10 @@ composer.json
 composer.lock
 package.json
 package-lock.json
+webpack.config.js
 .editorconfig
 .phpcs.cache
 tests
+assets/editor
 *.log
 .DS_Store

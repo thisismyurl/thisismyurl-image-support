@@ -1,0 +1,14 @@
+{
+	"name": "thisismyurl-image-support",
+	"version": "0.0.0",
+	"description": "Build pipeline for the Image Support plugin's editor bundle. Produces assets/build/photo-credit-panel.js (the block-editor sidebar panel for core/image) from assets/editor/photo-credit-panel.jsx via @wordpress/scripts. The plugin's PHP runtime has no Node dependency; this build step exists only to compile the JSX into a browser-loadable bundle plus its asset.php manifest. Version is fixed at 0.0.0 because npm requires semver; plugin versioning lives in thisismyurl-image-support.php (TIMU_IMAGE_SUPPORT_VERSION) and follows the x.Yddd convention.",
+	"private": true,
+	"license": "GPL-2.0-or-later",
+	"scripts": {
+		"build": "wp-scripts build --output-path=assets/build",
+		"start": "wp-scripts start --output-path=assets/build"
+	},
+	"devDependencies": {
+		"@wordpress/scripts": "^30.0.0"
+	}
+}

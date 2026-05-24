@@ -4,6 +4,31 @@ All notable changes to **Image Support by thisismyurl.com** are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses the `x.Yddd` versioning scheme: `x` = release class (0 = pre-release, 1 = full), `Y` = last digit of year, `ddd` = Julian day.
 
+## [0.6144] - 2026-05-24
+
+### Added
+- **Master gate filter `thisismyurl_image_support_enabled`** (default `true`) at the cleanup chokepoint. Both the admin batch and the new WP-CLI batch route through it, so a developer can disable the rename/relink/merge pipeline per environment without deactivating the plugin. Restore-from-backup deliberately does **not** consult the gate — disabling cleanup must never disable rollback.
+- **Decision-point filters.** `thisismyurl_image_support_sanitized_filename` (adjust the slug rule), `thisismyurl_image_support_should_process` (per-attachment gate with the source path in hand), `thisismyurl_image_support_relink_post_types` and `thisismyurl_image_support_relink_post_statuses` (relink scope — extracted into resolvers from the two inline copies that previously diverged silently), and `thisismyurl_image_support_processable_mime_types` (which formats the batch will rename).
+- **Lifecycle actions.** `thisismyurl_image_support_before_rename` / `_after_rename` bracket each rename; `_filename_sanitized` fires on success with old and new names; `_rename_failed` fires on I/O failure; `_content_relinked` fires after each relink pass with the matched-reference report and a write-allowed flag (so a listener can distinguish a dry-run preview from an applied change).
+- **WP-CLI command set** under `wp image-support`: `sanitize` (rename + relink batch, `--all`, `--limit`, `--dry-run`, `--format`), `relink` (filesystem WebP discovery + content relink, `--dry-run`, `--format`), and read-only `status`. Mutating commands check `current_user_can( 'manage_options' )`, honour the enable gate, and refuse a non-dry-run unless `thisismyurl_image_support_confirm_destructive` is set. Registered in `includes/class-timu-image-support-cli.php`.
+- **Headless runtime methods** `run_cleanup_batch()` and `run_webp_discovery()` so the CLI shares the admin screen's logic, gate, and walk cursor without echoing admin HTML.
+- **Photo-credit attribution** (`includes/photo-credits.php`, `includes/photo-credits-admin.php`). A benign feature — it never renames files, merges attachments, or rewrites `post_content`. Seven attachment-meta keys (`_thisismyurl_photo_credit`, `_thisismyurl_photo_credit_url`, `_thisismyurl_photo_ai_generated`, `_thisismyurl_photo_ai_model`, `_thisismyurl_photo_ai_edit`, `_thisismyurl_photo_ai_edit_model`, `_thisismyurl_photo_composite`) registered for REST and the block editor. An attachment-edit meta box (Surface 1) and a `core/image` block-editor sidebar panel (Surface 2) share the same data via the attachment entity record. A `render_block_core/image` filter appends a `<span class="photo-credit">` to the figcaption — "Photograph by …", "AI direction by … • model", "Composite by …", with an "(AI edit: …)" suffix — and the styling ships in `assets/css/photo-credit.css` so it renders without a supporting theme. IPTC By-Line / Credit / Copyright pre-fill on `add_attachment`, never overwriting an editorial entry. WP-CLI: `wp image-support photo-credit backfill` and `wp image-support photo-credit ai-hero-report`. The auto-flag default credit is filterable via `thisismyurl_image_support_default_credit` (empty by default — the plugin never invents a name), and the sweep window via `thisismyurl_image_support_photo_credit_ship_date`.
+- **Alt-text accessibility fallback** (`includes/image-alt-fallback.php`). A benign filter on `wp_get_attachment_image_attributes` that fills an empty `alt` from the attachment's stored alt meta → post title → humanised filename. Decorative images (a non-empty `data-decorative` attribute alongside an empty `alt`) are left silent.
+
+### Migrated
+- Photo credits and the alt-text fallback moved in from the site-specific plugin (`thisismyurl-site`) so they ship in the published plugin. Internal function names were re-prefixed to `thisismyurl_image_support_*` and the text domain to `thisismyurl-image-support`; the seven `_thisismyurl_photo_*` meta-key string values were kept byte-identical because existing attachment data and the ImageObject schema emitter depend on them. The `'Christopher Ross'` hard-coded auto-flag credit was replaced with the `thisismyurl_image_support_default_credit` filter/option (default empty).
+
+### Documentation
+- **Re-scoped the "destructive by design" warning.** The plugin header, readme short description, Description, and FAQ now make explicit that only the filename-cleanup / duplicate-merge / content-resync features are destructive and gated by the opt-in switch; the photo-credit and alt-text features are benign and never consult that switch. A user installing for photo credits will not have their files renamed.
+
+### Changed
+- **`process_image_update()` split into an orchestrator over a `do_process_image_update()` worker.** The orchestrator owns the before/after/sanitized/failed actions and fires each from exactly one place; every existing error return inside the worker is preserved verbatim.
+- **The headless cleanup batch advances the walk cursor to the highest scanned attachment ID**, so an `--all` CLI run always makes forward progress past skipped or failed attachments instead of re-scanning the same page.
+- **Version bump** to `0.6144` (Julian day 144, 2026-05-24). Header `Version:` and readme `Stable tag:` agree.
+
+### Unchanged
+- The pre-existing `thisismyurl_image_support_enable_dynamic_webp`, `thisismyurl_image_support_confirm_destructive`, and `thisismyurl_image_support_hide_submenus` filters keep their exact names and signatures. Default behaviour is identical to `0.6124`; every new filter reproduces today's behaviour at its default value.
+
 ## [0.6124] - 2026-05-04
 
 ### Changed
