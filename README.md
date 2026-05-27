@@ -1,13 +1,10 @@
 # This Is My URL - Image Support
 
-[![CI](https://github.com/thisismyurl/thisismyurl-image-support/actions/workflows/ci.yml/badge.svg)](https://github.com/thisismyurl/thisismyurl-image-support/actions/workflows/ci.yml) [![WordPress Tested](https://img.shields.io/badge/WordPress-7.0-blue)](https://wordpress.org/) [![License](https://img.shields.io/badge/License-GPL--2.0-blue)](LICENSE)
-
-
-Current version: 1.6144
+[![CI](https://github.com/thisismyurl/thisismyurl-image-support/actions/workflows/ci.yml/badge.svg)](https://github.com/thisismyurl/thisismyurl-image-support/actions/workflows/ci.yml) [![WordPress](https://img.shields.io/badge/WordPress-6.4%2B-blue)](https://wordpress.org/) [![License](https://img.shields.io/badge/License-GPL--2.0-blue)](LICENSE)
 
 Image Support is a WordPress plugin for SEO-focused filename cleanup, media hardening, content reference synchronization, photo-credit attribution, alt-text accessibility, and safe rollback support.
 
-## What It Does
+## What it does
 
 Image Support groups two kinds of feature, and it matters which is which.
 
@@ -48,7 +45,7 @@ A single screen under **Tools → Image Support** is where you preview a batch, 
 
 The plugin processes image attachments in batches, updates matching content references, and keeps backup copies for rollback. The photo-credit and alt-text features need no setup — they do nothing until an attachment has credit data or a rendered image is missing its `alt`. For scripted runs, see the WP-CLI commands under [For developers](#for-developers).
 
-## Restore Behavior
+## Restore behavior
 
 Backup files are stored in `/wp-content/uploads/timu-image-backups/`.
 
@@ -68,12 +65,6 @@ This plugin uses the format `x.Yddd`:
 - `ddd` = Julian day-of-year of the release date
 
 A full release cut on 2026-05-24 — the 144th day of 2026 — is `1.6144`.
-
-## License
-
-GPLv2 or later.
-
----
 
 ## For developers
 
@@ -140,74 +131,65 @@ wp image-support photo-credit ai-hero-report
 
 A non-dry-run mutating command run without confirmation exits with an error explaining how to opt in — it never silently no-ops.
 
----
+## Changelog
 
-## Support and Contribute
-
-### Ways to Support
-
-I build these tools because WordPress sites in the wild keep hitting the same problems, and a focused plugin is usually the right fix. There's no tracking, no ads, and you don't need to pay to use these plugins.
-
-If you find them helpful, here are some genuine ways to support the work:
-
-- **Sponsor if it fits your budget:** You can sponsor the project through [GitHub Sponsors](https://github.com/sponsors/thisismyurl). Sponsorship helps, but it's always optional.
-- **Contribute code or ideas:** Opening a pull request, reporting an issue, or testing edge cases is just as valuable as sponsorship. Helping me improve these plugins is a great way to contribute.
-- **Share your experience:** A follow on [WordPress.org](https://profiles.wordpress.org/thisismyurl/), [GitHub](https://github.com/thisismyurl), or [LinkedIn](https://linkedin.com/in/thisismyurl) helps others find this work.
-
-### Report Issues and Questions
-
-Found a bug? Want to suggest a feature? Just curious how something works?
-
-- **File an issue:** Use the [Issues](../../issues) tab. Include your WordPress and PHP version, and steps to reproduce.
-- **Start a discussion:** Use the [Discussions](../../discussions) tab for questions, ideas, or general conversation about the plugin.
-
-### Contributing Code
-
-Code contributions are welcome and genuinely valuable. Here's the workflow:
-
-1. **Fork this repository** and clone it locally.
-2. **Create a feature branch** with a clear name (e.g., `feature/improve-safety-check`).
-3. **Make your changes** and test thoroughly on edge cases.
-4. **Follow WordPress coding standards** — run `composer run lint:phpcs` before opening a PR.
-5. **Open a pull request** with a clear description of what changed and why.
-
-I review PRs thoughtfully and appreciate well-tested contributions. Contributing is never required, but it's genuinely helpful.
+See [releases](../../releases) or [readme.txt](readme.txt).
 
 ---
 
+## Support and donations
+
+I build these tools because WordPress sites in the wild keep hitting the same problems, and a small, focused plugin is usually the right fix. They're free to use, with no tracking and no ads.
+
+If one of them saves you time, here are the genuine ways to help:
+
+- **Sponsor the work.** [GitHub Sponsors](https://github.com/sponsors/thisismyurl) is the simplest way, and the Sponsor button at the top of this repo lists it alongside Bitcoin, Dogecoin, PayPal, and Interac e-transfer. Any amount helps, and none of it is expected.
+- **Contribute code or ideas.** A pull request, a bug report, or a tested edge case is worth as much as a donation. See [CONTRIBUTING.md](CONTRIBUTING.md) to get started.
+- **Share it.** A note on [WordPress.org](https://profiles.wordpress.org/thisismyurl/), [GitHub](https://github.com/thisismyurl), or [LinkedIn](https://linkedin.com/in/thisismyurl) helps other people find work that might save them the same afternoon.
+
+### Report issues and questions
+
+- **Found a bug or want a feature?** Open an issue on the [Issues](../../issues) tab. Include your WordPress and PHP versions and the steps to reproduce it.
+- **Have a question?** Start a thread on the [Discussions](../../discussions) tab.
+
+### Contributing code
+
+Code contributions are welcome. The short version:
+
+1. Fork the repository and clone your fork.
+2. Create a branch with a clear name, like `feature/short-descriptive-name`.
+3. Make your change and test it against the edge cases.
+4. Run the coding-standards check before you open the pull request.
+5. Open a pull request that explains what changed and why.
+
+The full workflow and standards live in [CONTRIBUTING.md](CONTRIBUTING.md). Contributing is never required, but it is always appreciated.
 
 ## About This Is My URL
 
-This plugin supports the work I do at [This Is My URL](https://thisismyurl.com/wordpress-seo-services/), where I help WordPress teams build secure, performant, and maintainable sites.
+This plugin is built and maintained by [This Is My URL](https://thisismyurl.com/), the WordPress development and technical SEO practice of Christopher Ross. I help teams build WordPress sites that stay secure, fast, and maintainable, and I write small, focused plugins like this one for the problems those sites keep running into.
 
-This plugin is built and maintained by [This Is My URL](https://thisismyurl.com/), a WordPress development and technical SEO practice. I'm Christopher Ross, a WordPress developer and technical SEO specialist working on the open web since 1996 and on WordPress since 2007.
+### My background
 
-### My Background
+- On the web since 1996, and in WordPress since 2007
+- WordPress.org plugin developer with 19 plugins published since 2009
+- Technical SEO practitioner focused on performance, security, and search visibility
+- Lead instructor and curriculum architect at the M.L. Campbell Training Center, the Sherwin-Williams® international training facility for its industrial wood division
 
-- **On the open web since 1996, on WordPress since 2007** — shipping production systems for media, education, and government
-- **WordPress contributor since 2007** — plugins published on .org, code shipped to media, education, and government deployments
-- **Technical SEO practitioner** helping sites improve performance, security, and search visibility
-- **Lead instructor and curriculum architect** at the M.L. Campbell Training Center — Sherwin-Williams' international training facility for the industrial wood division
+### Ways to connect
 
-I believe in straightforward solutions that work. No hype. No unnecessary complexity.
-
-### Ways to Connect
-
-- **WordPress.org profile:** [profiles.wordpress.org/thisismyurl](https://profiles.wordpress.org/thisismyurl/)
-- **GitHub:** [github.com/thisismyurl](https://github.com/thisismyurl)
 - **Website:** [thisismyurl.com](https://thisismyurl.com/)
+- **WordPress.org:** [profiles.wordpress.org/thisismyurl](https://profiles.wordpress.org/thisismyurl/)
+- **GitHub:** [github.com/thisismyurl](https://github.com/thisismyurl)
 - **LinkedIn:** [linkedin.com/in/thisismyurl](https://linkedin.com/in/thisismyurl)
-
 
 ## Contributors
 
 - **Christopher Ross** ([@thisismyurl](https://github.com/thisismyurl)) — author and maintainer
-- **Contributors:** Thanks to everyone who's reported issues, tested edge cases, and contributed code
+- Thanks to everyone who has reported issues, tested edge cases, and contributed code
 
 ## License
 
 GPL-2.0-or-later — see [LICENSE](LICENSE) or [gnu.org/licenses/gpl-2.0.html](https://www.gnu.org/licenses/gpl-2.0.html).
-
 
 ---
 *This project follows the [10 Core Pillars](PILLARS.md). Support quality work [here](https://github.com/sponsors/thisismyurl).*
