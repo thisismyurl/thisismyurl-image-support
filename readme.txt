@@ -8,7 +8,7 @@ Tags: webp, media, images, optimization, filenames, photo credits, attribution, 
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.6144
+Stable tag: 1.6147
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,11 @@ Code contributions are welcome and genuinely valuable:
 I review PRs thoughtfully and appreciate well-tested contributions. Contributing is never required, but it's genuinely helpful.
 
 == Changelog ==
+
+= 1.6147 =
+* Unified plugin versioning to the x.Yddd calendar-version scheme.
+* Confirmed compatibility with WordPress 7.0.
+
 
 = 1.6144 =
 * Developer surface: added the master gate filter `thisismyurl_image_support_enabled` (default true) at the cleanup chokepoint — both the admin batch and the new CLI batch honour it. Recovery (restore from backup) deliberately stays ungated.
