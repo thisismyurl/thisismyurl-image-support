@@ -46,6 +46,7 @@ define( 'TIMU_IMAGE_SUPPORT_URL', plugin_dir_url( __FILE__ ) );
 require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/photo-credits.php';
 require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/photo-credits-admin.php';
 require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/image-alt-fallback.php';
+require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/abilities.php';
 
 class TIMU_IC {
 

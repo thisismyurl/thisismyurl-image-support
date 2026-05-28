@@ -110,6 +110,9 @@ I review PRs thoughtfully and appreciate well-tested contributions. Contributing
 
 == Changelog ==
 
+= 1.6148 =
+* Added WordPress 7.0 Abilities API support: the `thisismyurl-image-support/sanitize-filenames` ability exposes the filename-sanitization and content-relink batch (the same operation as `wp image-support sanitize`) for discovery and REST/AI invocation. Guarded by `manage_options`, the master enable filter, and the destructive-operations opt-in; defaults to a dry run.
+
 = 1.6147 =
 * Unified plugin versioning to the x.Yddd calendar-version scheme.
 * Confirmed compatibility with WordPress 7.0.
