@@ -3,7 +3,7 @@
  * Plugin Name: This Is My URL - Image Support
  * Plugin URI:  https://thisismyurl.com/thisismyurl-image-support/
  * Description: Image filename cleanup, duplicate merging, WebP discovery, photo-credit attribution, and alt-text accessibility fallback. The cleanup/merge features are destructive and require opt-in via the "Confirm destructive operations" option before any rename, merge, or post_content rewrite runs; the photo-credit and alt-fallback features are benign and never touch files or post content.
- * Version:     1.6147
+ * Version:     1.6148.2110
  * Requires at least: 6.4
  * Requires PHP: 8.1
  * Author:      Christopher Ross
@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * for asset enqueuing and cache-busting. Kept in sync with the `Version:`
  * header above by the release process.
  */
-define( 'TIMU_IMAGE_SUPPORT_VERSION', '1.6147' );
+define( 'TIMU_IMAGE_SUPPORT_VERSION', '1.6148.2110' );
 define( 'TIMU_IMAGE_SUPPORT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'TIMU_IMAGE_SUPPORT_URL', plugin_dir_url( __FILE__ ) );
 
