@@ -8,7 +8,7 @@ Tags: webp, media, images, optimization, filenames, photo credits, attribution, 
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.6147
+Stable tag: 1.6148.2110
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -26,7 +26,7 @@ Image Support helps site owners tidy up WordPress media filenames, keep content 
 
 Features include:
 
-* Filename sanitization for image attachments (with a per-file extension whitelist, NUL/RTL/path-traversal rejection, and a deterministic fallback when a name reduces to empty).
+* Filename sanitization for image attachments (with a per-file extension allowlist, NUL/RTL/path-traversal rejection, and a deterministic fallback when a name reduces to empty).
 * Duplicate detection and trash-mode merge handling during cleanup. Merged duplicates are sent to Trash, not force-deleted, and a JSON sidecar of the attachment record is written before the merge.
 * Filesystem discovery for existing WebP files, walked via `WP_Query` over attachments — no assumption that uploads use the default `YYYY/MM` tree.
 * Async, opt-in WebP generation for JPEG and PNG images. The plugin never blocks a render thread on GD encoding; missing WebPs are scheduled via `wp_schedule_single_event` and produced on the next cron tick.
@@ -34,7 +34,7 @@ Features include:
 * Backups of original files before renaming. Restore is gated by capability, nonce, and POST (admin-post.php) — never GET.
 * Redirect support for requests that still hit old image paths.
 * A developer surface: WP-CLI commands (`wp image-support sanitize|relink|status`), action hooks bracketing each rename and relink, and filters at every meaningful decision point (master enable gate, filename slug rule, per-attachment process gate, relink scope and statuses, processable MIME types).
-* Photo-credit attribution (benign). Seven attachment-meta fields — credit name, credit link, AI-generated flag and model, AI-edit flag and model, and composite flag — surfaced through an attachment-edit meta box and a `core/image` block-editor sidebar panel. A render filter appends a `.photo-credit` line to the image's figcaption ("Photograph by …", "AI direction by … • model", "Composite by …"), with bundled CSS so it renders without a supporting theme. IPTC By-Line / Credit / Copyright pre-fill on upload, and full schema.org/ImageObject `creditText` / `creator` / `copyrightHolder` output for any consumer that reads the meta. `wp image-support photo-credit backfill` sweeps existing attachments; `ai-hero-report` surfaces pipeline AI heroes for editorial review.
+* Photo-credit attribution (benign). Seven attachment-meta fields — credit name, credit link, AI-generated flag and model, AI-edit flag and model, and composite flag — surfaced through an attachment-edit meta box and a `core/image` block-editor sidebar panel. A render filter appends a `.photo-credit` line to the image's figcaption ("Photograph by …", "AI direction by … • model", "Composite by …"), with bundled CSS so it renders without a supporting theme. IPTC By-Line / Credit / Copyright pre-fill on upload, and schema.org/ImageObject JSON-LD (`creditText` / `creator` / `copyrightHolder`) emitted on attachment pages for any credited image. `wp image-support photo-credit backfill` sweeps existing attachments; `ai-hero-report` surfaces pipeline AI heroes for editorial review.
 * Alt-text accessibility fallback (benign). A filter on `wp_get_attachment_image_attributes` fills an empty `alt` from the attachment's stored alt meta, then its title, then a humanised filename. Decorative images (`data-decorative`) are left silent.
 
 The plugin adds a single tools screen under Tools > Image Support where you can preview a batch of changes, toggle the destructive-ops switch, or apply changes. The photo-credit and alt-text features need no setup — they activate on plugin activation and do nothing until an attachment has credit data or a rendered image is missing its alt.
@@ -83,13 +83,15 @@ Yes. The cleanup pipeline can be disabled programmatically with the `thisismyurl
 
 = I want to support you =
 
-I'm building these tools because WordPress developers and site owners deserve straightforward, practical solutions. There's no tracking, no ads, and you don't need to pay to use these plugins.
+I build these tools because WordPress sites in the wild keep hitting the same problems, and a small, focused plugin is usually the right fix. They're free to use, with no tracking and no ads.
 
-If they're helpful, here are genuine ways to support the work:
+If one of them saves you time, here are the genuine ways to help:
 
-* **Sponsor this project:** Visit https://github.com/sponsors/thisismyurl if sponsorship fits your budget. Sponsorship helps, but it's always optional.
-* **Contribute code or ideas:** Opening a pull request, reporting an issue, or testing edge cases is just as valuable as sponsorship. Helping me improve these plugins is a great way to contribute.
-* **Share your experience:** A follow on [WordPress.org](https://profiles.wordpress.org/thisismyurl/), [GitHub](https://github.com/thisismyurl), or [LinkedIn](https://linkedin.com/in/thisismyurl) helps others find this work.
+* **Sponsor the work:** [GitHub Sponsors](https://github.com/sponsors/thisismyurl) is the simplest way. Any amount helps, and none of it is expected.
+* **Contribute code or ideas:** A pull request, a bug report, or a tested edge case is worth as much as a donation. Helping me improve these plugins is a great way to contribute.
+* **Share it:** A note on [WordPress.org](https://profiles.wordpress.org/thisismyurl/), [GitHub](https://github.com/thisismyurl), or [LinkedIn](https://linkedin.com/in/thisismyurl) helps other people find work that might save them the same afternoon.
+
+This plugin is built and maintained by [This Is My URL](https://thisismyurl.com/), the WordPress development and technical SEO practice of Christopher Ross. I help teams build WordPress sites that stay secure, fast, and maintainable, and I write small, focused plugins like this one for the problems those sites keep running into.
 
 = I found a bug or have a feature idea =
 
@@ -109,6 +111,16 @@ Code contributions are welcome and genuinely valuable:
 I review PRs thoughtfully and appreciate well-tested contributions. Contributing is never required, but it's genuinely helpful.
 
 == Changelog ==
+
+= 1.6149 =
+* Shipped the schema.org/ImageObject JSON-LD emitter the photo-credit module always documented: attachment pages now output `creditText`, `creator`, and `copyrightHolder` (Person for photographs, Organization for AI-direction and composites) read from the existing credit meta. AI-generated and composite images credit a production role rather than a photographer.
+* Security: the photo-credit render filter now inserts credit markup with a literal string splice instead of `preg_replace`, so a credit name containing `$1`, `$0`, or `\0` (e.g. "A$AP Photography") is no longer interpreted as a regex backreference.
+* Data safety: uninstall no longer deletes `/uploads/timu-image-backups/` (the only recovery path for renamed originals) unless `TIMU_IMAGE_SUPPORT_DELETE_BACKUPS_ON_UNINSTALL` is explicitly defined truthy. Uninstall now also removes the previously orphaned `_thisismyurl_photo_*` attachment meta and the `thisismyurl_image_support_default_credit` option.
+* Reliability: the backup-directory hardening files and the merge-manifest JSON sidecar are now written through WP_Filesystem instead of raw `file_put_contents`, so they no longer fail silently on FTP/SSH filesystem mounts.
+* Removed the dead legacy `updater.php` (`FWO_GitHub_Updater`); the live updater is `github-updater.php` (`TIMU_GitHub_Release_Updater`).
+
+= 1.6148 =
+* Added WordPress 7.0 Abilities API support: the `thisismyurl-image-support/sanitize-filenames` ability exposes the filename-sanitization and content-relink batch (the same operation as `wp image-support sanitize`) for discovery and REST/AI invocation. Guarded by `manage_options`, the master enable filter, and the destructive-operations opt-in; defaults to a dry run.
 
 = 1.6147 =
 * Unified plugin versioning to the x.Yddd calendar-version scheme.

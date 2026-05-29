@@ -3,7 +3,7 @@
  * Plugin Name: This Is My URL - Image Support
  * Plugin URI:  https://thisismyurl.com/thisismyurl-image-support/
  * Description: Image filename cleanup, duplicate merging, WebP discovery, photo-credit attribution, and alt-text accessibility fallback. The cleanup/merge features are destructive and require opt-in via the "Confirm destructive operations" option before any rename, merge, or post_content rewrite runs; the photo-credit and alt-fallback features are benign and never touch files or post content.
- * Version:     1.6147
+ * Version:     1.6148.2110
  * Requires at least: 6.4
  * Requires PHP: 8.1
  * Author:      Christopher Ross
@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * for asset enqueuing and cache-busting. Kept in sync with the `Version:`
  * header above by the release process.
  */
-define( 'TIMU_IMAGE_SUPPORT_VERSION', '1.6147' );
+define( 'TIMU_IMAGE_SUPPORT_VERSION', '1.6148.2110' );
 define( 'TIMU_IMAGE_SUPPORT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'TIMU_IMAGE_SUPPORT_URL', plugin_dir_url( __FILE__ ) );
 
@@ -37,6 +37,7 @@ define( 'TIMU_IMAGE_SUPPORT_URL', plugin_dir_url( __FILE__ ) );
  *   - photo-credits.php        Attachment credit meta, render filter, IPTC
  *                              pre-fill, bundled CSS, and the WP-CLI commands.
  *   - photo-credits-admin.php  Attachment-edit meta box + block-editor panel.
+ *   - photo-credit-schema.php  schema.org/ImageObject JSON-LD on attachment pages.
  *   - image-alt-fallback.php   Three-tier alt-text fallback on render.
  *
  * These are benign: they never rename files, merge attachments, or rewrite
@@ -45,7 +46,9 @@ define( 'TIMU_IMAGE_SUPPORT_URL', plugin_dir_url( __FILE__ ) );
  */
 require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/photo-credits.php';
 require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/photo-credits-admin.php';
+require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/photo-credit-schema.php';
 require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/image-alt-fallback.php';
+require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/abilities.php';
 
 class TIMU_IC {
 
@@ -81,12 +84,34 @@ class TIMU_IC {
     }
 
     /**
+     * Lazily initialise and return the WP_Filesystem abstraction.
+     *
+     * Writing text files through WP_Filesystem (rather than raw file_put_contents)
+     * keeps the plugin working on hosts where the filesystem method is FTP/SSH
+     * rather than direct — and matches uninstall.php, which already uses it.
+     *
+     * @return WP_Filesystem_Base|null The filesystem object, or null when it could not be initialised.
+     */
+    private function filesystem() {
+        global $wp_filesystem;
+        if ( empty( $wp_filesystem ) ) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+            WP_Filesystem();
+        }
+        return $wp_filesystem instanceof WP_Filesystem_Base ? $wp_filesystem : null;
+    }
+
+    /**
      * Drop hardening files into the backup directory so it is never directory-listable
      * and never serves anything by default. Idempotent â€” safe to call repeatedly.
      */
     public function ensure_backup_dir_protected() {
         if ( ! is_dir( $this->backup_dir ) ) {
             wp_mkdir_p( $this->backup_dir );
+        }
+        $filesystem = $this->filesystem();
+        if ( null === $filesystem ) {
+            return;
         }
         $files = array(
             '.htaccess'   => "Require all denied\n<IfModule !mod_authz_core.c>\nOrder allow,deny\nDeny from all\n</IfModule>\n",
@@ -95,8 +120,8 @@ class TIMU_IC {
         );
         foreach ( $files as $name => $body ) {
             $path = $this->backup_dir . $name;
-            if ( ! file_exists( $path ) ) {
-                file_put_contents( $path, $body );
+            if ( ! $filesystem->exists( $path ) ) {
+                $filesystem->put_contents( $path, $body, FS_CHMOD_FILE );
             }
         }
     }
@@ -496,8 +521,12 @@ class TIMU_IC {
             'attached_file' => get_attached_file( $attachment_id ),
             'url'           => wp_get_attachment_url( $attachment_id ),
         );
+        $filesystem = $this->filesystem();
+        if ( null === $filesystem ) {
+            return false;
+        }
         $path = $manifest_dir . 'attachment-' . absint( $attachment_id ) . '-' . time() . '.json';
-        return (bool) file_put_contents( $path, wp_json_encode( $payload, JSON_PRETTY_PRINT ) );
+        return (bool) $filesystem->put_contents( $path, wp_json_encode( $payload, JSON_PRETTY_PRINT ), FS_CHMOD_FILE );
     }
 
     private function merge_duplicate_assets( $duplicate_id, $original_id, $dry_run ) {
