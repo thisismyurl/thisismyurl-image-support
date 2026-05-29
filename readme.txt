@@ -83,13 +83,15 @@ Yes. The cleanup pipeline can be disabled programmatically with the `thisismyurl
 
 = I want to support you =
 
-I'm building these tools because WordPress developers and site owners deserve straightforward, practical solutions. There's no tracking, no ads, and you don't need to pay to use these plugins.
+I build these tools because WordPress sites in the wild keep hitting the same problems, and a small, focused plugin is usually the right fix. They're free to use, with no tracking and no ads.
 
-If they're helpful, here are genuine ways to support the work:
+If one of them saves you time, here are the genuine ways to help:
 
-* **Sponsor this project:** Visit https://github.com/sponsors/thisismyurl if sponsorship fits your budget. Sponsorship helps, but it's always optional.
-* **Contribute code or ideas:** Opening a pull request, reporting an issue, or testing edge cases is just as valuable as sponsorship. Helping me improve these plugins is a great way to contribute.
-* **Share your experience:** A follow on [WordPress.org](https://profiles.wordpress.org/thisismyurl/), [GitHub](https://github.com/thisismyurl), or [LinkedIn](https://linkedin.com/in/thisismyurl) helps others find this work.
+* **Sponsor the work:** [GitHub Sponsors](https://github.com/sponsors/thisismyurl) is the simplest way. Any amount helps, and none of it is expected.
+* **Contribute code or ideas:** A pull request, a bug report, or a tested edge case is worth as much as a donation. Helping me improve these plugins is a great way to contribute.
+* **Share it:** A note on [WordPress.org](https://profiles.wordpress.org/thisismyurl/), [GitHub](https://github.com/thisismyurl), or [LinkedIn](https://linkedin.com/in/thisismyurl) helps other people find work that might save them the same afternoon.
+
+This plugin is built and maintained by [This Is My URL](https://thisismyurl.com/), the WordPress development and technical SEO practice of Christopher Ross. I help teams build WordPress sites that stay secure, fast, and maintainable, and I write small, focused plugins like this one for the problems those sites keep running into.
 
 = I found a bug or have a feature idea =
 
