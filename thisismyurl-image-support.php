@@ -1674,7 +1674,7 @@ add_action(
 
 require_once plugin_dir_path( __FILE__ ) . 'github-updater.php';
 
-timu_boot_github_release_updater(
+\ThisIsMyURL\ImageSupport\GitHubReleaseUpdater::boot(
     array(
         'plugin_file' => __FILE__,
         'slug'        => 'thisismyurl-image-support',
