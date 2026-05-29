@@ -26,7 +26,7 @@ Image Support helps site owners tidy up WordPress media filenames, keep content 
 
 Features include:
 
-* Filename sanitization for image attachments (with a per-file extension whitelist, NUL/RTL/path-traversal rejection, and a deterministic fallback when a name reduces to empty).
+* Filename sanitization for image attachments (with a per-file extension allowlist, NUL/RTL/path-traversal rejection, and a deterministic fallback when a name reduces to empty).
 * Duplicate detection and trash-mode merge handling during cleanup. Merged duplicates are sent to Trash, not force-deleted, and a JSON sidecar of the attachment record is written before the merge.
 * Filesystem discovery for existing WebP files, walked via `WP_Query` over attachments — no assumption that uploads use the default `YYYY/MM` tree.
 * Async, opt-in WebP generation for JPEG and PNG images. The plugin never blocks a render thread on GD encoding; missing WebPs are scheduled via `wp_schedule_single_event` and produced on the next cron tick.
