@@ -456,18 +456,34 @@ function thisismyurl_image_support_render_image_with_credit( $block_content, $bl
 	}
 
 	// Case 1: existing figcaption — append the span before its closing tag.
+	//
+	// Insert with a literal str_replace rather than preg_replace: the credit
+	// markup is the REPLACEMENT, and a photographer name containing `$1`, `$0`,
+	// or `\0` (e.g. "A$AP Photography") would otherwise be read as a
+	// backreference and corrupt the output. str_replace never interprets the
+	// replacement string. The closing-tag match is case-sensitive because the
+	// block editor always emits lowercase `</figcaption>` / `</figure>`; a
+	// `stripos` guard above only decides which branch to take.
 	if ( false !== stripos( $block_content, '<figcaption' ) ) {
-		$updated = preg_replace( '#(</figcaption>)#i', $credit_html . '$1', $block_content, 1 );
-		return is_string( $updated ) ? $updated : $block_content;
+		$pos = stripos( $block_content, '</figcaption>' );
+		if ( false === $pos ) {
+			return $block_content;
+		}
+		$tag = substr( $block_content, $pos, strlen( '</figcaption>' ) );
+		return substr_replace( $block_content, $credit_html . $tag, $pos, strlen( $tag ) );
 	}
 
 	// Case 2: no figcaption — wrap the span in a new one and slot it in before
 	// </figure>. wp-element-caption matches the block editor's own figcaption
 	// class so the bundled CSS picks it up cleanly.
+	$pos = stripos( $block_content, '</figure>' );
+	if ( false === $pos ) {
+		return $block_content;
+	}
+	$tag        = substr( $block_content, $pos, strlen( '</figure>' ) );
 	$figcaption = sprintf( '<figcaption class="wp-element-caption">%s</figcaption>', $credit_html );
-	$updated    = preg_replace( '#(</figure>)#i', $figcaption . '$1', $block_content, 1 );
 
-	return is_string( $updated ) ? $updated : $block_content;
+	return substr_replace( $block_content, $figcaption . $tag, $pos, strlen( $tag ) );
 }
 add_filter( 'render_block_core/image', 'thisismyurl_image_support_render_image_with_credit', 10, 2 );
 
