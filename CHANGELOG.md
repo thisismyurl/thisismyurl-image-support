@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to **This Is My URL - Image Support** are documented here.
+All notable changes to **Christopher Ross - Image Support** are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses the `x.Yddd` versioning scheme: `x` = release class (0 = pre-release, 1 = full), `Y` = last digit of year, `ddd` = Julian day.
 

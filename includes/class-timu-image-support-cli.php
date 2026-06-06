@@ -1,6 +1,6 @@
 <?php
 /**
- * WP-CLI commands for This Is My URL - Image Support.
+ * WP-CLI commands for Christopher Ross - Image Support.
  *
  * Registered via `WP_CLI::add_command( 'image-support', 'TIMU_Image_Support_CLI' )`
  * inside TIMU_IC::__construct() when WP-CLI is loaded.

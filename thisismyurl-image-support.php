@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: This Is My URL - Image Support
+ * Plugin Name: - Image Support by Christopher Ross
  * Plugin URI:  https://thisismyurl.com/thisismyurl-image-support/
  * Description: Image filename cleanup, duplicate merging, WebP discovery, photo-credit attribution, and alt-text accessibility fallback. The cleanup/merge features are destructive and require opt-in via the "Confirm destructive operations" option before any rename, merge, or post_content rewrite runs; the photo-credit and alt-fallback features are benign and never touch files or post content.
  * Version:     1.6149.0734

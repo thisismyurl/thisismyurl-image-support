@@ -1,10 +1,10 @@
-# This Is My URL - Image Support
+# Christopher Ross - Image Support
 
 [![CI](https://github.com/thisismyurl/thisismyurl-image-support/actions/workflows/ci.yml/badge.svg)](https://github.com/thisismyurl/thisismyurl-image-support/actions/workflows/ci.yml) [![WordPress](https://img.shields.io/badge/WordPress-6.4%2B-blue)](https://wordpress.org/) [![License](https://img.shields.io/badge/License-GPL--2.0-blue)](LICENSE)
 
 Image Support is a WordPress plugin for SEO-focused filename cleanup, media hardening, content reference synchronization, photo-credit attribution, alt-text accessibility, and safe rollback support.
 
-> **Part of the This Is My URL image toolkit:** [Image Support](https://github.com/thisismyurl/thisismyurl-image-support) for library-wide filename cleanup, content-reference syncing, photo credits, and alt text; [WebP Support](https://github.com/thisismyurl/thisismyurl-webp-support) and [HEIC Support](https://github.com/thisismyurl/thisismyurl-heic-support) for focused format conversion; and [SVG Support](https://github.com/thisismyurl/thisismyurl-svg-support) for safe SVG uploads. Reach for a focused plugin if you only need that format; use Image Support for library-wide work.
+> **Part of the Christopher Ross image toolkit:** [Image Support](https://github.com/thisismyurl/thisismyurl-image-support) for library-wide filename cleanup, content-reference syncing, photo credits, and alt text; [WebP Support](https://github.com/thisismyurl/thisismyurl-webp-support) and [HEIC Support](https://github.com/thisismyurl/thisismyurl-heic-support) for focused format conversion; and [SVG Support](https://github.com/thisismyurl/thisismyurl-svg-support) for safe SVG uploads. Reach for a focused plugin if you only need that format; use Image Support for library-wide work.
 
 ## What it does
 
@@ -166,9 +166,9 @@ Code contributions are welcome. The short version:
 
 The full workflow and standards live in [CONTRIBUTING.md](CONTRIBUTING.md). Contributing is never required, but it is always appreciated.
 
-## About This Is My URL
+## About Christopher Ross
 
-This plugin is built and maintained by [This Is My URL](https://thisismyurl.com/), the WordPress development and technical SEO practice of Christopher Ross. I help teams build WordPress sites that stay secure, fast, and maintainable, and I write small, focused plugins like this one for the problems those sites keep running into.
+This plugin is built and maintained by [Christopher Ross](https://thisismyurl.com/), the WordPress development and technical SEO practice of Christopher Ross. I help teams build WordPress sites that stay secure, fast, and maintainable, and I write small, focused plugins like this one for the problems those sites keep running into.
 
 ### My background
 

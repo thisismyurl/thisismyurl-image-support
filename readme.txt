@@ -1,4 +1,4 @@
-=== This Is My URL - Image Support ===
+=== - Image Support by Christopher Ross ===
 Contributors: thisismyurl
 Author: Christopher Ross
 Author URI: https://thisismyurl.com/
@@ -91,7 +91,7 @@ If one of them saves you time, here are the genuine ways to help:
 * **Contribute code or ideas:** A pull request, a bug report, or a tested edge case is worth as much as a donation. Helping me improve these plugins is a great way to contribute.
 * **Share it:** A note on [WordPress.org](https://profiles.wordpress.org/thisismyurl/), [GitHub](https://github.com/thisismyurl), or [LinkedIn](https://linkedin.com/in/thisismyurl) helps other people find work that might save them the same afternoon.
 
-This plugin is built and maintained by [This Is My URL](https://thisismyurl.com/), the WordPress development and technical SEO practice of Christopher Ross. I help teams build WordPress sites that stay secure, fast, and maintainable, and I write small, focused plugins like this one for the problems those sites keep running into.
+This plugin is built and maintained by [Christopher Ross](https://thisismyurl.com/), the WordPress development and technical SEO practice of Christopher Ross. I help teams build WordPress sites that stay secure, fast, and maintainable, and I write small, focused plugins like this one for the problems those sites keep running into.
 
 = I found a bug or have a feature idea =
 

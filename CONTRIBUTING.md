@@ -1,6 +1,6 @@
-# Contributing to This Is My URL Plugins
+# Contributing to Christopher Ross Plugins
 
-Thank you for your interest in contributing to This Is My URL plugins. This is a community effort, and all contributions are welcome.
+Thank you for your interest in contributing to Christopher Ross plugins. This is a community effort, and all contributions are welcome.
 
 ## Code of Conduct
 

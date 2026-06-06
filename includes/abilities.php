@@ -1,6 +1,6 @@
 <?php
 /**
- * WP 7 Abilities API registration for This Is My URL - Image Support.
+ * WP 7 Abilities API registration for Christopher Ross - Image Support.
  *
  * Exposes the media-library filename sanitization + content-relink batch as a
  * discoverable, REST/AI-invokable ability. The ability wraps the same
