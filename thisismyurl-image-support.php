@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: - Image Support by Christopher Ross
+ * Plugin Name: Image Support by Christopher Ross
  * Plugin URI:  https://thisismyurl.com/thisismyurl-image-support/
  * Description: Image filename cleanup, duplicate merging, WebP discovery, photo-credit attribution, and alt-text accessibility fallback. The cleanup/merge features are destructive and require opt-in via the "Confirm destructive operations" option before any rename, merge, or post_content rewrite runs; the photo-credit and alt-fallback features are benign and never touch files or post content.
  * Version:     1.6149.0734
@@ -1578,7 +1578,7 @@ class TIMU_IC {
 
         // Batch is capped at 50 to match handle_cleanup()'s internal clamp; the previous 1000 was theatre.
         $user_batch = $is_post && isset( $_POST['batch_limit'] )
-            ? max( 1, min( 50, (int) $_POST['batch_limit'] ) )
+            ? max( 1, min( 50, (int) wp_unslash( $_POST['batch_limit'] ) ) )
             : 5;
 
         $confirmed = (bool) get_option( 'thisismyurl_image_support_confirm_destructive', false );
