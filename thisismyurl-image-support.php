@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * for asset enqueuing and cache-busting. Kept in sync with the `Version:`
  * header above by the release process.
  */
-define( 'TIMU_IMAGE_SUPPORT_VERSION', '1.6149.0734' );
+define( 'TIMU_IMAGE_SUPPORT_VERSION', '1.6158.1440' );
 define( 'TIMU_IMAGE_SUPPORT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'TIMU_IMAGE_SUPPORT_URL', plugin_dir_url( __FILE__ ) );
 
