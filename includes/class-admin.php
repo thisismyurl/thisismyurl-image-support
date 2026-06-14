@@ -32,10 +32,18 @@ class TIMU_IC_Admin {
 		// Standard AJAX actions.
 		add_action( 'wp_ajax_timu_ic_process_batch', array( __CLASS__, 'ajax_process_batch' ) );
 		add_action( 'wp_ajax_timu_ic_restore_single', array( __CLASS__, 'ajax_restore_single' ) );
+		add_action( 'wp_ajax_timu_ic_undo_run', array( __CLASS__, 'ajax_undo_run' ) );
 		add_action( 'wp_ajax_timu_ic_dry_run_csv', array( __CLASS__, 'ajax_dry_run_csv' ) );
 		add_action( 'wp_ajax_timu_ic_strip_exif', array( __CLASS__, 'ajax_strip_exif' ) );
 		add_action( 'wp_ajax_timu_ic_reattach_bulk', array( __CLASS__, 'ajax_reattach_bulk' ) );
 		add_action( 'wp_ajax_timu_ic_get_exif', array( __CLASS__, 'ajax_get_exif' ) );
+		add_action( 'wp_ajax_timu_ic_recompute_score', array( __CLASS__, 'ajax_recompute_score' ) );
+
+		// Metadata curation: alt editing + title/caption/description normalise.
+		add_action( 'wp_ajax_timu_ic_save_alt', array( __CLASS__, 'ajax_save_alt' ) );
+		add_action( 'wp_ajax_timu_ic_bulk_fill_alt', array( __CLASS__, 'ajax_bulk_fill_alt' ) );
+		add_action( 'wp_ajax_timu_ic_normalize_preview', array( __CLASS__, 'ajax_normalize_preview' ) );
+		add_action( 'wp_ajax_timu_ic_normalize_apply', array( __CLASS__, 'ajax_normalize_apply' ) );
 
 		// Admin-post handlers for file downloads.
 		add_action( 'admin_post_timu_ic_export_orphans_csv', array( __CLASS__, 'handle_export_orphans_csv' ) );
@@ -104,9 +112,9 @@ class TIMU_IC_Admin {
 
 		wp_enqueue_script(
 			'timu-image-support-admin',
-			TIMU_IC_URL . 'assets/js/admin.js',
+			TIMU_IMAGE_SUPPORT_URL . 'assets/js/admin.js',
 			array( 'jquery' ),
-			TIMU_IC_VERSION,
+			TIMU_IMAGE_SUPPORT_VERSION,
 			true
 		);
 	}
@@ -223,29 +231,46 @@ class TIMU_IC_Admin {
 			wp_send_json_error( __( 'No attachments were provided for batch processing.', 'thisismyurl-image-support' ) );
 		}
 
-		$processed_ids = array();
-		$failed_ids    = array();
-		$errors        = array();
-
-		foreach ( $ids as $attachment_id ) {
-			$result = TIMU_IC_File_Ops::process_attachment_for_cleanup( (int) $attachment_id );
-			if ( true === $result ) {
-				$processed_ids[] = $attachment_id;
-			} else {
-				$failed_ids[] = $attachment_id;
-				$errors[]     = is_wp_error( $result )
-					? $result->get_error_message()
-					: __( 'Unknown processing error.', 'thisismyurl-image-support' );
-			}
-		}
+		// Run the batch inside a recorded session so the whole pass can be
+		// reversed as a unit from the "Recent runs" panel.
+		$run = TIMU_IC_File_Ops::run_batch( $ids, 'optimize-batch' );
 
 		wp_send_json_success(
 			array(
-				'processed_ids' => $processed_ids,
-				'failed_ids'    => $failed_ids,
-				'errors'        => array_values( array_unique( $errors ) ),
+				'run_id'        => $run['run_id'],
+				'processed_ids' => $run['processed'],
+				'failed_ids'    => $run['failed'],
+				'errors'        => $run['errors'],
 			)
 		);
+	}
+
+	/**
+	 * AJAX: reverse a recorded cleanup run as a unit.
+	 *
+	 * Restorative action — allowed even when destructive ops are currently off,
+	 * since it only reverses writes the pipeline already made.
+	 *
+	 * @return void
+	 */
+	public static function ajax_undo_run() {
+		check_ajax_referer( TIMU_IC::AJAX_NONCE_ACTION, 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Unauthorized request.', 'thisismyurl-image-support' ) );
+		}
+
+		$run_id = isset( $_POST['run_id'] ) ? sanitize_text_field( wp_unslash( $_POST['run_id'] ) ) : '';
+		if ( '' === $run_id ) {
+			wp_send_json_error( __( 'No cleanup run was specified.', 'thisismyurl-image-support' ) );
+		}
+
+		$result = TIMU_IC_File_Ops::undo_run( $run_id );
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( $result->get_error_message() );
+		}
+
+		wp_send_json_success( $result );
 	}
 
 	/**
@@ -490,6 +515,161 @@ class TIMU_IC_Admin {
 		exit;
 	}
 
+	/**
+	 * AJAX: recompute the Library Health Score and return the fresh payload.
+	 *
+	 * @return void
+	 */
+	public static function ajax_recompute_score() {
+		check_ajax_referer( TIMU_IC::AJAX_NONCE_ACTION, 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Unauthorized request.', 'thisismyurl-image-support' ) );
+		}
+
+		TIMU_IC_Score::flush();
+		$score = TIMU_IC_Score::compute();
+
+		wp_send_json_success(
+			array(
+				'overall'    => (int) $score['overall'],
+				'band_label' => (string) $score['band_label'],
+				'summary'    => (string) $score['summary'],
+			)
+		);
+	}
+
+	// -------------------------------------------------------------------------
+	// AJAX handlers — metadata curation (alt + normalise)
+	// -------------------------------------------------------------------------
+
+	/**
+	 * AJAX: save alt text on a single attachment.
+	 *
+	 * @return void
+	 */
+	public static function ajax_save_alt() {
+		check_ajax_referer( TIMU_IC::AJAX_NONCE_ACTION, 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Unauthorized request.', 'thisismyurl-image-support' ) );
+		}
+
+		$att_id = isset( $_POST['attachment_id'] ) ? absint( $_POST['attachment_id'] ) : 0;
+		if ( ! $att_id ) {
+			wp_send_json_error( __( 'Invalid attachment ID.', 'thisismyurl-image-support' ) );
+		}
+
+		// Sanitised again inside save_alt_text(); unslash here for the round-trip.
+		$alt = isset( $_POST['alt'] ) ? sanitize_text_field( wp_unslash( $_POST['alt'] ) ) : '';
+
+		$result = TIMU_IC_Curation::save_alt_text( $att_id, $alt );
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( $result->get_error_message() );
+		}
+
+		wp_send_json_success(
+			array(
+				'attachment_id' => $att_id,
+				'alt'           => (string) get_post_meta( $att_id, '_wp_attachment_image_alt', true ),
+			)
+		);
+	}
+
+	/**
+	 * AJAX: bulk-fill alt text on a set of attachments from a chosen source.
+	 *
+	 * @return void
+	 */
+	public static function ajax_bulk_fill_alt() {
+		check_ajax_referer( TIMU_IC::AJAX_NONCE_ACTION, 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Unauthorized request.', 'thisismyurl-image-support' ) );
+		}
+
+		$ids      = isset( $_POST['attachment_ids'] ) ? (array) wp_unslash( $_POST['attachment_ids'] ) : array();
+		$source   = isset( $_POST['source'] ) ? sanitize_key( wp_unslash( $_POST['source'] ) ) : 'title';
+		$template = isset( $_POST['template'] ) ? sanitize_text_field( wp_unslash( $_POST['template'] ) ) : '';
+
+		if ( empty( $ids ) ) {
+			wp_send_json_error( __( 'No attachments were provided.', 'thisismyurl-image-support' ) );
+		}
+
+		$result = TIMU_IC_Curation::bulk_fill_alt( $ids, $source, $template );
+
+		wp_send_json_success( $result );
+	}
+
+	/**
+	 * AJAX: preview a normalisation batch (no writes).
+	 *
+	 * @return void
+	 */
+	public static function ajax_normalize_preview() {
+		check_ajax_referer( TIMU_IC::AJAX_NONCE_ACTION, 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Unauthorized request.', 'thisismyurl-image-support' ) );
+		}
+
+		$ids  = isset( $_POST['attachment_ids'] ) ? (array) wp_unslash( $_POST['attachment_ids'] ) : array();
+		$opts = self::read_normalize_opts();
+
+		if ( empty( $ids ) ) {
+			wp_send_json_error( __( 'No attachments were provided.', 'thisismyurl-image-support' ) );
+		}
+
+		$result = TIMU_IC_Curation::bulk_normalize( $ids, $opts, true );
+
+		wp_send_json_success( $result );
+	}
+
+	/**
+	 * AJAX: apply a normalisation batch (writes attachment fields).
+	 *
+	 * @return void
+	 */
+	public static function ajax_normalize_apply() {
+		check_ajax_referer( TIMU_IC::AJAX_NONCE_ACTION, 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Unauthorized request.', 'thisismyurl-image-support' ) );
+		}
+
+		$ids  = isset( $_POST['attachment_ids'] ) ? (array) wp_unslash( $_POST['attachment_ids'] ) : array();
+		$opts = self::read_normalize_opts();
+
+		if ( empty( $ids ) ) {
+			wp_send_json_error( __( 'No attachments were provided.', 'thisismyurl-image-support' ) );
+		}
+
+		$result = TIMU_IC_Curation::bulk_normalize( $ids, $opts, false );
+
+		wp_send_json_success( $result );
+	}
+
+	/**
+	 * Read the normalise opt-ins and templates from the POST body.
+	 *
+	 * The per-field booleans gate which attachment fields a run touches; the
+	 * templates are sanitised here and again inside the curation class.
+	 *
+	 * @return array Opts array consumed by TIMU_IC_Curation::bulk_normalize().
+	 */
+	private static function read_normalize_opts() {
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- caller verified the nonce.
+		return array(
+			'title'                => ! empty( $_POST['do_title'] ),
+			'caption'              => ! empty( $_POST['do_caption'] ),
+			'description'          => ! empty( $_POST['do_description'] ),
+			'title_template'       => isset( $_POST['title_template'] ) ? sanitize_text_field( wp_unslash( $_POST['title_template'] ) ) : '',
+			'caption_template'     => isset( $_POST['caption_template'] ) ? sanitize_text_field( wp_unslash( $_POST['caption_template'] ) ) : '',
+			'description_template' => isset( $_POST['description_template'] ) ? sanitize_text_field( wp_unslash( $_POST['description_template'] ) ) : '',
+		);
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
+	}
+
 	// -------------------------------------------------------------------------
 	// Admin-post download handlers
 	// -------------------------------------------------------------------------
@@ -664,11 +844,11 @@ class TIMU_IC_Admin {
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'thisismyurl-image-support' ) );
 		}
 
-		$allowed_tabs = array( 'optimize', 'settings', 'report', 'audit' );
+		$allowed_tabs = array( 'health', 'optimize', 'organize', 'settings', 'report', 'audit' );
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$active_tab = isset( $_GET['tab'] ) ? sanitize_key( (string) $_GET['tab'] ) : 'optimize';
+		$active_tab = isset( $_GET['tab'] ) ? sanitize_key( (string) $_GET['tab'] ) : 'health';
 		if ( ! in_array( $active_tab, $allowed_tabs, true ) ) {
-			$active_tab = 'optimize';
+			$active_tab = 'health';
 		}
 
 		$options         = TIMU_IC_Options::get();
@@ -705,6 +885,7 @@ class TIMU_IC_Admin {
 							'dryRun'   => 'timu_ic_dry_run_csv',
 							'stripExif' => 'timu_ic_strip_exif',
 							'reattach' => 'timu_ic_reattach_bulk',
+							'undoRun'  => 'timu_ic_undo_run',
 						),
 						'batchSize'  => TIMU_IC_Options::get_batch_size(),
 						'perPage'    => (int) $options['list_per_page'],
@@ -714,6 +895,63 @@ class TIMU_IC_Admin {
 							'restoring'         => __( 'Restoring…', 'thisismyurl-image-support' ),
 							'confirmRestoreAll' => __( 'Restore all images? This cannot be undone.', 'thisismyurl-image-support' ),
 							'failedPrefix'      => __( 'Some images failed:', 'thisismyurl-image-support' ),
+							'confirmUndoRun'    => __( 'Undo this cleanup run? Every file, name, and content link it changed will be restored.', 'thisismyurl-image-support' ),
+							'undoing'           => __( 'Undoing…', 'thisismyurl-image-support' ),
+							'undoFailed'        => __( 'Undo failed.', 'thisismyurl-image-support' ),
+						),
+					)
+				) . ';',
+				'before'
+			);
+		}
+
+		// Inline JS data for the Organize tab (create folder + assign selected).
+		if ( 'organize' === $active_tab ) {
+			wp_add_inline_script(
+				'timu-image-support-admin',
+				'window.TIMUImageSupportData = ' . wp_json_encode(
+					array(
+						'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+						'nonce'   => wp_create_nonce( TIMU_IC::AJAX_NONCE_ACTION ),
+						'actions' => array(
+							'createFolder' => 'timu_ic_create_folder',
+							'assignFolder' => 'timu_ic_assign_folder',
+						),
+						'strings' => array(
+							'working'       => __( 'Working…', 'thisismyurl-image-support' ),
+							'requestFailed' => __( 'Request failed.', 'thisismyurl-image-support' ),
+							'needName'      => __( 'Enter a folder name first.', 'thisismyurl-image-support' ),
+							'needFolder'    => __( 'Choose a folder first.', 'thisismyurl-image-support' ),
+							'needSelection' => __( 'Select at least one image first.', 'thisismyurl-image-support' ),
+						),
+					)
+				) . ';',
+				'before'
+			);
+		}
+
+		// Inline JS data for the audit tab's curation tools (alt edit + normalise).
+		if ( 'audit' === $active_tab ) {
+			wp_add_inline_script(
+				'timu-image-support-admin',
+				'window.TIMUImageSupportData = ' . wp_json_encode(
+					array(
+						'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+						'nonce'   => wp_create_nonce( TIMU_IC::AJAX_NONCE_ACTION ),
+						'actions' => array(
+							'saveAlt'          => 'timu_ic_save_alt',
+							'bulkFillAlt'      => 'timu_ic_bulk_fill_alt',
+							'normalizePreview' => 'timu_ic_normalize_preview',
+							'normalizeApply'   => 'timu_ic_normalize_apply',
+						),
+						'strings' => array(
+							'saving'        => __( 'Saving…', 'thisismyurl-image-support' ),
+							'saved'         => __( 'Saved', 'thisismyurl-image-support' ),
+							'saveFailed'    => __( 'Save failed', 'thisismyurl-image-support' ),
+							'selectAtLeast' => __( 'Select at least one image first.', 'thisismyurl-image-support' ),
+							'working'       => __( 'Working…', 'thisismyurl-image-support' ),
+							'requestFailed' => __( 'Request failed.', 'thisismyurl-image-support' ),
+							'noChanges'     => __( 'No changes to apply for the selected images.', 'thisismyurl-image-support' ),
 						),
 					)
 				) . ';',
@@ -741,7 +979,9 @@ class TIMU_IC_Admin {
 			<nav class="nav-tab-wrapper wp-clearfix">
 				<?php
 				$tabs = array(
+					'health'   => __( 'Health', 'thisismyurl-image-support' ),
 					'optimize' => __( 'Optimize', 'thisismyurl-image-support' ),
+					'organize' => __( 'Organize', 'thisismyurl-image-support' ),
 					'audit'    => __( 'Audit', 'thisismyurl-image-support' ),
 					'settings' => __( 'Settings', 'thisismyurl-image-support' ),
 					'report'   => __( 'Report', 'thisismyurl-image-support' ),
@@ -762,8 +1002,14 @@ class TIMU_IC_Admin {
 
 			<?php
 			switch ( $active_tab ) {
+				case 'health':
+					self::render_health_tab( $base_url );
+					break;
 				case 'optimize':
 					self::render_optimize_tab( $lists, $options, $pending_ids, $restorable, $base_url, $thisismyurl_url, $donate_url );
+					break;
+				case 'organize':
+					self::render_organize_tab( $base_url );
 					break;
 				case 'audit':
 					self::render_audit_tab( $base_url );
@@ -776,6 +1022,313 @@ class TIMU_IC_Admin {
 					break;
 			}
 			?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Resolve the "Review" link target for a health factor.
+	 *
+	 * Each factor points at the closest existing surface that lets the operator
+	 * act on it. Where no dedicated view exists yet, the link routes to the
+	 * nearest tab and the caller surfaces a short note via the returned label.
+	 *
+	 * @param string $factor_key Factor key.
+	 * @param string $base_url   Plugin admin base URL.
+	 *
+	 * @return array{url:string,label:string,note:string}
+	 */
+	private static function health_factor_action( $factor_key, $base_url ) {
+		$audit_url = add_query_arg( 'tab', 'audit', $base_url );
+
+		switch ( $factor_key ) {
+			case 'missing_alt':
+				return array(
+					'url'   => $audit_url . '#audit-alt-table',
+					'label' => __( 'Review missing alt text', 'thisismyurl-image-support' ),
+					'note'  => '',
+				);
+			case 'gps_privacy':
+				return array(
+					'url'   => admin_url( 'upload.php' ),
+					'label' => __( 'Inspect EXIF in Media Library', 'thisismyurl-image-support' ),
+					'note'  => __( 'Use the "Inspect EXIF" row action to strip GPS per image.', 'thisismyurl-image-support' ),
+				);
+			case 'junk_names':
+				return array(
+					'url'   => add_query_arg( 'tab', 'optimize', $base_url ),
+					'label' => __( 'Review filenames in Optimize', 'thisismyurl-image-support' ),
+					'note'  => '',
+				);
+			case 'oversized':
+				return array(
+					'url'   => add_query_arg( 'tab', 'optimize', $base_url ),
+					'label' => __( 'Downscale in Optimize', 'thisismyurl-image-support' ),
+					'note'  => '',
+				);
+			case 'orphans':
+				return array(
+					'url'   => $audit_url,
+					'label' => __( 'Review in Audit', 'thisismyurl-image-support' ),
+					'note'  => __( 'Unused images are attachments referenced nowhere. A dedicated list is planned; the Audit tab covers related cleanup today.', 'thisismyurl-image-support' ),
+				);
+			case 'duplicates':
+				return array(
+					'url'   => add_query_arg( 'tab', 'optimize', $base_url ),
+					'label' => __( 'Find duplicates in Optimize', 'thisismyurl-image-support' ),
+					'note'  => __( 'A dedicated duplicate finder view is planned; Optimize merges duplicates today.', 'thisismyurl-image-support' ),
+				);
+			default:
+				return array(
+					'url'   => $audit_url,
+					'label' => __( 'Review in Audit', 'thisismyurl-image-support' ),
+					'note'  => '',
+				);
+		}
+	}
+
+	/**
+	 * Render the Health tab — the Library Health Score dashboard.
+	 *
+	 * @param string $base_url Plugin admin base URL.
+	 *
+	 * @return void
+	 */
+	private static function render_health_tab( $base_url ) {
+		$score   = TIMU_IC_Score::get();
+		$overall = (int) $score['overall'];
+		$nonce   = wp_create_nonce( TIMU_IC::AJAX_NONCE_ACTION );
+		?>
+		<div id="poststuff" style="padding-top:10px;">
+			<div id="post-body" class="metabox-holder columns-2">
+				<div id="post-body-content">
+
+					<div class="postbox">
+						<h2 class="hndle"><span><?php esc_html_e( 'Library Health Score', 'thisismyurl-image-support' ); ?></span></h2>
+						<div class="inside">
+							<div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap;padding:8px 0;">
+								<div style="text-align:center;min-width:140px;" role="img"
+									aria-label="<?php echo esc_attr( sprintf( /* translators: 1: score 0-100, 2: band label */ __( 'Library health score %1$d out of 100, rated %2$s.', 'thisismyurl-image-support' ), $overall, $score['band_label'] ) ); ?>">
+									<div style="font-size:64px;line-height:1;font-weight:600;color:#1d2327;" aria-hidden="true">
+										<?php echo esc_html( number_format_i18n( $overall ) ); ?>
+									</div>
+									<div style="font-size:13px;color:#646970;margin-top:4px;" aria-hidden="true">
+										<?php esc_html_e( 'out of 100', 'thisismyurl-image-support' ); ?>
+									</div>
+									<p style="margin:10px 0 0;font-size:15px;font-weight:600;">
+										<span class="timu-band timu-band-<?php echo esc_attr( $score['band'] ); ?>" style="display:inline-block;padding:3px 12px;border-radius:12px;background:#f0f0f1;color:#1d2327;">
+											<?php echo esc_html( $score['band_label'] ); ?>
+										</span>
+									</p>
+								</div>
+								<div style="flex:1;min-width:240px;">
+									<p style="font-size:15px;margin-top:0;"><?php echo esc_html( $score['summary'] ); ?></p>
+									<p style="margin-bottom:0;">
+										<button id="timu-recompute-score" class="button button-secondary"
+											data-nonce="<?php echo esc_attr( $nonce ); ?>"
+											data-ajax="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>">
+											<?php esc_html_e( 'Recompute', 'thisismyurl-image-support' ); ?>
+										</button>
+										<span id="timu-recompute-msg" style="margin-left:8px;color:#646970;"></span>
+									</p>
+									<p class="description" style="margin-bottom:0;">
+										<?php
+										echo esc_html(
+											sprintf(
+												/* translators: 1: image count, 2: human-readable time-ago */
+												__( 'Based on %1$s images. Last computed %2$s ago.', 'thisismyurl-image-support' ),
+												number_format_i18n( (int) $score['total_images'] ),
+												human_time_diff( (int) $score['computed_at'], time() )
+											)
+										);
+										?>
+									</p>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="postbox">
+						<h2 class="hndle"><span><?php esc_html_e( 'Breakdown', 'thisismyurl-image-support' ); ?></span></h2>
+						<div class="inside">
+							<table class="widefat striped" style="border:none;box-shadow:none;">
+								<thead>
+									<tr>
+										<th><?php esc_html_e( 'Factor', 'thisismyurl-image-support' ); ?></th>
+										<th style="width:120px;"><?php esc_html_e( 'Affected', 'thisismyurl-image-support' ); ?></th>
+										<th style="width:90px;"><?php esc_html_e( 'Score', 'thisismyurl-image-support' ); ?></th>
+										<th style="width:200px;"><?php esc_html_e( 'Action', 'thisismyurl-image-support' ); ?></th>
+									</tr>
+								</thead>
+								<tbody>
+									<?php foreach ( $score['factors'] as $factor ) : ?>
+										<?php
+										$action  = self::health_factor_action( $factor['key'], $base_url );
+										$sampled = ! empty( $factor['sampled'] );
+										?>
+										<tr>
+											<td>
+												<strong><?php echo esc_html( $factor['label'] ); ?></strong>
+												<p class="description" style="margin:2px 0 0;"><?php echo esc_html( $factor['description'] ); ?></p>
+												<?php if ( '' !== $action['note'] ) : ?>
+													<p class="description" style="margin:2px 0 0;color:#996800;"><?php echo esc_html( $action['note'] ); ?></p>
+												<?php endif; ?>
+											</td>
+											<td>
+												<?php
+												echo esc_html(
+													sprintf(
+														/* translators: 1: affected count, 2: total */
+														_n( '%1$s of %2$s', '%1$s of %2$s', (int) $factor['affected'], 'thisismyurl-image-support' ),
+														number_format_i18n( (int) $factor['affected'] ),
+														number_format_i18n( (int) $factor['total'] )
+													)
+												);
+												?>
+												<br>
+												<span class="description"><?php echo esc_html( number_format_i18n( (float) $factor['percent'], 1 ) . '%' ); ?><?php echo $sampled ? esc_html__( ' (sampled)', 'thisismyurl-image-support' ) : ''; ?></span>
+											</td>
+											<td>
+												<strong><?php echo esc_html( number_format_i18n( (int) $factor['sub_score'] ) ); ?></strong>
+												<span class="description">/100</span>
+											</td>
+											<td>
+												<a href="<?php echo esc_url( $action['url'] ); ?>" class="button button-small">
+													<?php echo esc_html( $action['label'] ); ?>
+												</a>
+											</td>
+										</tr>
+									<?php endforeach; ?>
+								</tbody>
+							</table>
+						</div>
+					</div>
+
+				</div>
+
+				<div id="postbox-container-1" class="postbox-container">
+					<div class="postbox">
+						<h2 class="hndle"><span><?php esc_html_e( 'How the score works', 'thisismyurl-image-support' ); ?></span></h2>
+						<div class="inside">
+							<p class="description">
+								<?php esc_html_e( 'The score is a weighted average of six curation factors. Alt text and GPS privacy carry the most weight, followed by filenames and dimensions, then unused images and duplicates.', 'thisismyurl-image-support' ); ?>
+							</p>
+							<p class="description">
+								<?php esc_html_e( 'It is cached and refreshed daily. Use Recompute after a cleanup run to see the result right away.', 'thisismyurl-image-support' ); ?>
+							</p>
+						</div>
+					</div>
+				</div>
+
+			</div>
+		</div>
+
+		<script>
+		jQuery(function($){
+			'use strict';
+			$('#timu-recompute-score').on('click', function(){
+				var $btn = $(this);
+				$btn.prop('disabled', true);
+				$('#timu-recompute-msg').text('<?php echo esc_js( __( 'Recomputing…', 'thisismyurl-image-support' ) ); ?>');
+				$.post($btn.data('ajax'), {
+					action: 'timu_ic_recompute_score',
+					nonce: $btn.data('nonce')
+				}).done(function(res){
+					if (res && res.success && res.data) {
+						$('#timu-recompute-msg').text('<?php echo esc_js( __( 'Updated. Reloading…', 'thisismyurl-image-support' ) ); ?>');
+						setTimeout(function(){ location.reload(); }, 600);
+					} else {
+						$('#timu-recompute-msg').text('<?php echo esc_js( __( 'Could not recompute.', 'thisismyurl-image-support' ) ); ?>');
+						$btn.prop('disabled', false);
+					}
+				}).fail(function(){
+					$('#timu-recompute-msg').text('<?php echo esc_js( __( 'Request failed.', 'thisismyurl-image-support' ) ); ?>');
+					$btn.prop('disabled', false);
+				});
+			});
+		});
+		</script>
+		<?php
+	}
+
+	/**
+	 * Render the "Recent runs" panel with a per-run undo control.
+	 *
+	 * Shows each undoable cleanup run inside the undo window — when it ran, how
+	 * many items it touched, and what those operations were — with an "Undo this
+	 * run" button per row. The button's handler lives in assets/js/admin.js.
+	 *
+	 * @return void
+	 */
+	private static function render_recent_runs_panel() {
+		$runs  = TIMU_IC_Run_Log::undoable();
+		$nonce = wp_create_nonce( TIMU_IC::AJAX_NONCE_ACTION );
+
+		$op_labels = array(
+			'rename'    => __( 'Renamed', 'thisismyurl-image-support' ),
+			'downscale' => __( 'Downscaled', 'thisismyurl-image-support' ),
+			'merge'     => __( 'Merged duplicate', 'thisismyurl-image-support' ),
+			'relink'    => __( 'Relinked content', 'thisismyurl-image-support' ),
+		);
+		?>
+		<div class="postbox" id="timu-recent-runs">
+			<h2 class="hndle"><span><?php esc_html_e( 'Recent runs', 'thisismyurl-image-support' ); ?></span></h2>
+			<div class="inside">
+				<p class="description">
+					<?php esc_html_e( 'Each cleanup batch is recorded so you can reverse the whole pass at once. Undo restores every file, name, and content link the run changed.', 'thisismyurl-image-support' ); ?>
+				</p>
+				<div id="timu-undo-result"></div>
+				<?php if ( empty( $runs ) ) : ?>
+					<p><?php esc_html_e( 'No recent runs are available to undo.', 'thisismyurl-image-support' ); ?></p>
+				<?php else : ?>
+					<table class="widefat striped" style="border:none;box-shadow:none;">
+						<thead>
+							<tr>
+								<th><?php esc_html_e( 'When', 'thisismyurl-image-support' ); ?></th>
+								<th style="width:70px;"><?php esc_html_e( 'Items', 'thisismyurl-image-support' ); ?></th>
+								<th><?php esc_html_e( 'What it did', 'thisismyurl-image-support' ); ?></th>
+								<th style="width:150px;"><?php esc_html_e( 'Action', 'thisismyurl-image-support' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach ( $runs as $run ) : ?>
+								<?php
+								$summary = TIMU_IC_Run_Log::summarize( $run );
+								$parts   = array();
+								foreach ( $summary['by_operation'] as $op => $count ) {
+									$label   = isset( $op_labels[ $op ] ) ? $op_labels[ $op ] : ucfirst( $op );
+									$parts[] = $label . ' ' . number_format_i18n( $count );
+								}
+								?>
+								<tr id="timu-run-<?php echo esc_attr( $run['run_id'] ); ?>">
+									<td>
+										<?php
+										echo esc_html(
+											sprintf(
+												/* translators: %s: human-readable time-ago, e.g. "5 minutes". */
+												__( '%s ago', 'thisismyurl-image-support' ),
+												human_time_diff( (int) $run['started_at'], time() )
+											)
+										);
+										?>
+										<br>
+										<span class="description"><?php echo esc_html( wp_date( 'Y-m-d H:i', (int) $run['started_at'] ) ); ?></span>
+									</td>
+									<td><?php echo esc_html( number_format_i18n( (int) $summary['count'] ) ); ?></td>
+									<td><?php echo esc_html( implode( ', ', $parts ) ); ?></td>
+									<td>
+										<button class="button button-secondary timu-undo-run"
+											data-run="<?php echo esc_attr( $run['run_id'] ); ?>"
+											data-nonce="<?php echo esc_attr( $nonce ); ?>">
+											<?php esc_html_e( 'Undo this run', 'thisismyurl-image-support' ); ?>
+										</button>
+									</td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+				<?php endif; ?>
+			</div>
 		</div>
 		<?php
 	}
@@ -821,6 +1374,8 @@ class TIMU_IC_Admin {
 							</div>
 						</div>
 					</div>
+
+					<?php self::render_recent_runs_panel(); ?>
 
 					<div class="postbox">
 						<h2 class="hndle">
@@ -1007,12 +1562,312 @@ class TIMU_IC_Admin {
 	}
 
 	/**
+	 * Render a compact previous/next pager for a paged audit list.
+	 *
+	 * Keeps the active tab and the other list's page in the URL via
+	 * add_query_arg(), and anchors back to the section so a page change lands on
+	 * the list the operator was working in rather than the top of the tab.
+	 *
+	 * @param string $base_url   Plugin admin base URL.
+	 * @param string $param      Query var carrying this list's page number.
+	 * @param int    $paged      Current page.
+	 * @param int    $max_pages  Total pages.
+	 * @param string $anchor     Element ID to scroll back to.
+	 *
+	 * @return void
+	 */
+	private static function render_pager( $base_url, $param, $paged, $max_pages, $anchor ) {
+		if ( $max_pages <= 1 ) {
+			return;
+		}
+
+		$tab_url  = add_query_arg( 'tab', 'audit', $base_url );
+		$prev_url = add_query_arg( $param, max( 1, $paged - 1 ), $tab_url ) . '#' . $anchor;
+		$next_url = add_query_arg( $param, min( $max_pages, $paged + 1 ), $tab_url ) . '#' . $anchor;
+		?>
+		<p class="timu-pager" style="margin-top:10px;">
+			<?php if ( $paged > 1 ) : ?>
+				<a class="button button-secondary" href="<?php echo esc_url( $prev_url ); ?>">&laquo; <?php esc_html_e( 'Previous', 'thisismyurl-image-support' ); ?></a>
+			<?php endif; ?>
+			<span style="margin:0 8px;color:#646970;">
+				<?php
+				echo esc_html(
+					sprintf(
+						/* translators: 1: current page, 2: total pages */
+						__( 'Page %1$d of %2$d', 'thisismyurl-image-support' ),
+						$paged,
+						$max_pages
+					)
+				);
+				?>
+			</span>
+			<?php if ( $paged < $max_pages ) : ?>
+				<a class="button button-secondary" href="<?php echo esc_url( $next_url ); ?>"><?php esc_html_e( 'Next', 'thisismyurl-image-support' ); ?> &raquo;</a>
+			<?php endif; ?>
+		</p>
+		<?php
+	}
+
+	/**
 	 * Render the Audit tab.
 	 *
 	 * @param string $base_url Plugin admin base URL.
 	 *
 	 * @return void
 	 */
+	/**
+	 * Render the Organize tab — create folders and bulk-assign attachments.
+	 *
+	 * Part A of media organization. Folders are a hierarchical taxonomy on
+	 * attachments (TIMU_IC_Media_Organization::TAXONOMY); this tab is the create +
+	 * assign surface, and the Media library carries the folder + completeness
+	 * filter dropdowns. The completeness panel here links the expensive criteria
+	 * (unused, duplicates, GPS) to the Audit tab rather than running them live.
+	 *
+	 * @param string $base_url Plugin admin base URL.
+	 *
+	 * @return void
+	 */
+	private static function render_organize_tab( $base_url ) {
+		$taxonomy   = TIMU_IC_Media_Organization::TAXONOMY;
+		$ajax_nonce = wp_create_nonce( TIMU_IC::AJAX_NONCE_ACTION );
+		$upload_url = admin_url( 'upload.php' );
+		$audit_url  = add_query_arg( 'tab', 'audit', $base_url );
+
+		$folders = get_terms(
+			array(
+				'taxonomy'   => $taxonomy,
+				'hide_empty' => false,
+			)
+		);
+		if ( is_wp_error( $folders ) ) {
+			$folders = array();
+		}
+
+		// A small, recent slice of attachments to assign from this screen. The
+		// Media library remains the home for large-scale selection via its folder
+		// and completeness filters; this list is the in-context quick-assign.
+		$recent = new WP_Query(
+			array(
+				'post_type'      => 'attachment',
+				'post_status'    => 'inherit',
+				'post_mime_type' => 'image',
+				'posts_per_page' => 40,
+				'orderby'        => 'date',
+				'order'          => 'DESC',
+				'fields'         => 'ids',
+				'no_found_rows'  => true,
+			)
+		);
+		$recent_ids = array_map( 'intval', (array) $recent->posts );
+		?>
+		<div id="poststuff" style="padding-top:10px;">
+			<div id="post-body" class="metabox-holder columns-2">
+				<div id="post-body-content">
+
+					<!-- Create folder -->
+					<div class="postbox" id="organize-create">
+						<h2 class="hndle"><span><?php esc_html_e( 'Folders', 'thisismyurl-image-support' ); ?></span></h2>
+						<div class="inside">
+							<p class="description"><?php esc_html_e( 'Folders are a private, hierarchical taxonomy on your images. They never appear on the front end — they are a way to organise the Media library and filter it from the list view.', 'thisismyurl-image-support' ); ?></p>
+
+							<div class="timu-bulk-bar" style="display:flex;align-items:flex-end;flex-wrap:wrap;gap:8px;margin:6px 0 12px;padding:10px;background:#f6f7f7;border:1px solid #dcdcde;">
+								<div>
+									<label for="timu-folder-name" style="display:block;margin-bottom:4px;"><?php esc_html_e( 'New folder name', 'thisismyurl-image-support' ); ?></label>
+									<input type="text" id="timu-folder-name" class="regular-text" style="width:240px;" placeholder="<?php esc_attr_e( 'e.g. Client logos', 'thisismyurl-image-support' ); ?>">
+								</div>
+								<div>
+									<label for="timu-folder-parent" style="display:block;margin-bottom:4px;"><?php esc_html_e( 'Parent folder', 'thisismyurl-image-support' ); ?></label>
+									<select id="timu-folder-parent">
+										<option value="0"><?php esc_html_e( '— None (top level) —', 'thisismyurl-image-support' ); ?></option>
+										<?php foreach ( $folders as $folder ) : ?>
+											<option value="<?php echo esc_attr( $folder->term_id ); ?>"><?php echo esc_html( $folder->name ); ?></option>
+										<?php endforeach; ?>
+									</select>
+								</div>
+								<button id="timu-folder-create" class="button button-primary" data-nonce="<?php echo esc_attr( $ajax_nonce ); ?>">
+									<?php esc_html_e( 'Create folder', 'thisismyurl-image-support' ); ?>
+								</button>
+								<span id="timu-folder-create-msg" aria-live="polite" style="color:#646970;"></span>
+							</div>
+
+							<table class="widefat striped" id="organize-folder-table" style="border:none;box-shadow:none;">
+								<thead>
+									<tr>
+										<th><?php esc_html_e( 'Folder', 'thisismyurl-image-support' ); ?></th>
+										<th style="width:100px;"><?php esc_html_e( 'Images', 'thisismyurl-image-support' ); ?></th>
+										<th style="width:140px;"><?php esc_html_e( 'View', 'thisismyurl-image-support' ); ?></th>
+									</tr>
+								</thead>
+								<tbody>
+									<?php if ( empty( $folders ) ) : ?>
+										<tr><td colspan="3"><?php esc_html_e( 'No folders yet. Create one above to get started.', 'thisismyurl-image-support' ); ?></td></tr>
+									<?php else : ?>
+										<?php foreach ( $folders as $folder ) : ?>
+											<?php $view_url = add_query_arg( $taxonomy, $folder->slug, $upload_url ); ?>
+											<tr data-term-id="<?php echo esc_attr( $folder->term_id ); ?>">
+												<td><?php echo esc_html( $folder->name ); ?></td>
+												<td><?php echo esc_html( number_format_i18n( $folder->count ) ); ?></td>
+												<td><a href="<?php echo esc_url( $view_url ); ?>"><?php esc_html_e( 'Show in Media', 'thisismyurl-image-support' ); ?></a></td>
+											</tr>
+										<?php endforeach; ?>
+									<?php endif; ?>
+								</tbody>
+							</table>
+						</div>
+					</div>
+
+					<!-- Assign to folder -->
+					<div class="postbox" id="organize-assign">
+						<h2 class="hndle"><span><?php esc_html_e( 'Assign images to a folder', 'thisismyurl-image-support' ); ?></span></h2>
+						<div class="inside">
+							<p class="description"><?php esc_html_e( 'Pick a folder, tick the images below, and assign. This shows your 40 most recent images for a quick start; to organise the whole library at scale, use the Folder and Completeness filters on the Media library list view.', 'thisismyurl-image-support' ); ?></p>
+
+							<?php if ( empty( $recent_ids ) ) : ?>
+								<p><?php esc_html_e( 'No images in the library yet.', 'thisismyurl-image-support' ); ?></p>
+							<?php else : ?>
+								<div class="timu-bulk-bar" style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:6px 0 12px;padding:10px;background:#f6f7f7;border:1px solid #dcdcde;">
+									<label for="timu-assign-folder"><?php esc_html_e( 'Assign selected to', 'thisismyurl-image-support' ); ?></label>
+									<select id="timu-assign-folder">
+										<option value="0"><?php esc_html_e( '— Choose a folder —', 'thisismyurl-image-support' ); ?></option>
+										<?php foreach ( $folders as $folder ) : ?>
+											<option value="<?php echo esc_attr( $folder->term_id ); ?>"><?php echo esc_html( $folder->name ); ?></option>
+										<?php endforeach; ?>
+									</select>
+									<button id="timu-assign-go" class="button button-primary" data-nonce="<?php echo esc_attr( $ajax_nonce ); ?>">
+										<?php esc_html_e( 'Assign selected', 'thisismyurl-image-support' ); ?>
+									</button>
+									<span id="timu-assign-msg" aria-live="polite" style="color:#646970;"></span>
+								</div>
+
+								<p>
+									<label><input type="checkbox" id="timu-assign-check-all"> <?php esc_html_e( 'Select all shown', 'thisismyurl-image-support' ); ?></label>
+								</p>
+
+								<div style="display:flex;flex-wrap:wrap;gap:10px;">
+									<?php foreach ( $recent_ids as $att_id ) : ?>
+										<label style="display:block;width:96px;text-align:center;cursor:pointer;">
+											<?php echo wp_kses_post( wp_get_attachment_image( $att_id, array( 90, 90 ) ) ); ?><br>
+											<input type="checkbox" class="timu-assign-cb" value="<?php echo esc_attr( $att_id ); ?>"
+												aria-label="<?php echo esc_attr( sprintf( /* translators: %d: attachment ID */ __( 'Select attachment %d', 'thisismyurl-image-support' ), $att_id ) ); ?>">
+											<span style="font-size:11px;color:#646970;">#<?php echo esc_html( $att_id ); ?></span>
+										</label>
+									<?php endforeach; ?>
+								</div>
+							<?php endif; ?>
+						</div>
+					</div>
+
+					<!-- Filter by completeness -->
+					<div class="postbox" id="organize-completeness">
+						<h2 class="hndle"><span><?php esc_html_e( 'Filter the library by completeness', 'thisismyurl-image-support' ); ?></span></h2>
+						<div class="inside">
+							<p class="description"><?php esc_html_e( 'The Media library list view carries a Completeness dropdown so you can show, for example, every image missing alt text. These three checks are fast enough to run live:', 'thisismyurl-image-support' ); ?></p>
+							<ul style="list-style:disc;margin-left:20px;">
+								<li>
+									<a href="<?php echo esc_url( add_query_arg( 'timu_completeness', 'missing_alt', $upload_url ) ); ?>"><?php esc_html_e( 'Missing alt text', 'thisismyurl-image-support' ); ?></a>
+								</li>
+								<li>
+									<a href="<?php echo esc_url( add_query_arg( 'timu_completeness', 'junk_name', $upload_url ) ); ?>"><?php esc_html_e( 'Junk filename', 'thisismyurl-image-support' ); ?></a>
+								</li>
+								<li>
+									<a href="<?php echo esc_url( add_query_arg( 'timu_completeness', 'oversized', $upload_url ) ); ?>"><?php esc_html_e( 'Oversized dimensions', 'thisismyurl-image-support' ); ?></a>
+								</li>
+							</ul>
+							<p class="description"><?php esc_html_e( 'Three other checks are too costly to run on every Media-library page load, so they live in the Audit tab instead:', 'thisismyurl-image-support' ); ?></p>
+							<ul style="list-style:disc;margin-left:20px;">
+								<li><a href="<?php echo esc_url( $audit_url ); ?>"><?php esc_html_e( 'Unused images (referenced nowhere)', 'thisismyurl-image-support' ); ?></a></li>
+								<li><a href="<?php echo esc_url( $audit_url ); ?>"><?php esc_html_e( 'Binary duplicates', 'thisismyurl-image-support' ); ?></a></li>
+								<li><a href="<?php echo esc_url( $audit_url ); ?>"><?php esc_html_e( 'GPS in EXIF (privacy)', 'thisismyurl-image-support' ); ?></a></li>
+							</ul>
+						</div>
+					</div>
+
+				</div>
+			</div>
+		</div>
+
+		<script>
+		( function () {
+			var data = window.TIMUImageSupportData || {};
+			var ajaxUrl = data.ajaxUrl || window.ajaxurl;
+			var nonce = data.nonce || '';
+			var actions = data.actions || {};
+			var strings = data.strings || {};
+
+			function post( action, payload, done ) {
+				var fd = new FormData();
+				fd.append( 'action', action );
+				fd.append( 'nonce', nonce );
+				Object.keys( payload ).forEach( function ( key ) {
+					var value = payload[ key ];
+					if ( Array.isArray( value ) ) {
+						value.forEach( function ( v ) { fd.append( key + '[]', v ); } );
+					} else {
+						fd.append( key, value );
+					}
+				} );
+				fetch( ajaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' } )
+					.then( function ( r ) { return r.json(); } )
+					.then( done )
+					.catch( function () { done( { success: false, data: strings.requestFailed } ); } );
+			}
+
+			var createBtn = document.getElementById( 'timu-folder-create' );
+			if ( createBtn ) {
+				createBtn.addEventListener( 'click', function () {
+					var name = ( document.getElementById( 'timu-folder-name' ).value || '' ).trim();
+					var parent = document.getElementById( 'timu-folder-parent' ).value || '0';
+					var msg = document.getElementById( 'timu-folder-create-msg' );
+					if ( ! name ) { msg.textContent = strings.needName; return; }
+					msg.textContent = strings.working;
+					createBtn.disabled = true;
+					post( actions.createFolder, { name: name, parent: parent }, function ( res ) {
+						createBtn.disabled = false;
+						if ( res && res.success ) {
+							window.location.reload();
+						} else {
+							msg.textContent = ( res && res.data ) ? res.data : strings.requestFailed;
+						}
+					} );
+				} );
+			}
+
+			var checkAll = document.getElementById( 'timu-assign-check-all' );
+			if ( checkAll ) {
+				checkAll.addEventListener( 'change', function () {
+					var boxes = document.querySelectorAll( '.timu-assign-cb' );
+					for ( var i = 0; i < boxes.length; i++ ) { boxes[ i ].checked = checkAll.checked; }
+				} );
+			}
+
+			var assignBtn = document.getElementById( 'timu-assign-go' );
+			if ( assignBtn ) {
+				assignBtn.addEventListener( 'click', function () {
+					var termId = document.getElementById( 'timu-assign-folder' ).value || '0';
+					var msg = document.getElementById( 'timu-assign-msg' );
+					if ( termId === '0' ) { msg.textContent = strings.needFolder; return; }
+					var ids = [];
+					var boxes = document.querySelectorAll( '.timu-assign-cb:checked' );
+					for ( var i = 0; i < boxes.length; i++ ) { ids.push( boxes[ i ].value ); }
+					if ( ! ids.length ) { msg.textContent = strings.needSelection; return; }
+					msg.textContent = strings.working;
+					assignBtn.disabled = true;
+					post( actions.assignFolder, { term_id: termId, attachment_ids: ids }, function ( res ) {
+						assignBtn.disabled = false;
+						if ( res && res.success ) {
+							window.location.reload();
+						} else {
+							msg.textContent = ( res && res.data ) ? res.data : strings.requestFailed;
+						}
+					} );
+				} );
+			}
+		} )();
+		</script>
+		<?php
+	}
+
 	private static function render_audit_tab( $base_url ) {
 		$orphans        = TIMU_IC_Audit::get_orphan_images();
 		$broken         = TIMU_IC_Audit::get_broken_attachments();
@@ -1021,6 +1876,17 @@ class TIMU_IC_Admin {
 		$upload_dir     = wp_upload_dir();
 		$basedir        = trailingslashit( $upload_dir['basedir'] );
 		$queue_status   = TIMU_IC_Scheduler::get_queue_status();
+
+		// Bounded pages for the editable curation lists. The unbounded
+		// $no_alt_ids above still drives the section count and the CSV/JSON
+		// exports; the editable rows come from a paged read so a large library
+		// never materialises every row into the page at once.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$alt_paged  = isset( $_GET['alt_paged'] ) ? max( 1, absint( $_GET['alt_paged'] ) ) : 1;
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$junk_paged = isset( $_GET['junk_paged'] ) ? max( 1, absint( $_GET['junk_paged'] ) ) : 1;
+		$alt_page   = TIMU_IC_Curation::get_missing_alt_page( $alt_paged );
+		$junk_page  = TIMU_IC_Curation::get_junk_title_page( $junk_paged );
 
 		$orphans_nonce   = wp_create_nonce( 'timu_ic_export_orphans' );
 		$broken_nonce    = wp_create_nonce( 'timu_ic_export_broken' );
@@ -1115,16 +1981,16 @@ class TIMU_IC_Admin {
 						</div>
 					</div>
 
-					<!-- Missing Alt Text -->
-					<div class="postbox">
+					<!-- Fix missing alt text -->
+					<div class="postbox" id="audit-alt-fix">
 						<h2 class="hndle">
 							<span>
-								<?php esc_html_e( 'Attachments Missing Alt Text', 'thisismyurl-image-support' ); ?>
+								<?php esc_html_e( 'Fix missing alt text', 'thisismyurl-image-support' ); ?>
 								<span style="font-weight:normal;font-size:0.85em;color:#646970;">(<?php echo esc_html( count( $no_alt_ids ) ); ?>)</span>
 							</span>
 						</h2>
 						<div class="inside">
-							<p class="description"><?php esc_html_e( 'Image attachments with no alt text set. Alt text matters for accessibility and SEO.', 'thisismyurl-image-support' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Image attachments with no alt text. Edit a single row inline, or fill the whole page from the title, the filename, or a template. Alt text matters for accessibility and search.', 'thisismyurl-image-support' ); ?></p>
 							<?php if ( ! empty( $no_alt_ids ) ) : ?>
 								<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline-block;margin-bottom:10px;margin-right:6px;">
 									<input type="hidden" name="action" value="timu_ic_export_alt_text_csv">
@@ -1136,32 +2002,155 @@ class TIMU_IC_Admin {
 									<?php wp_nonce_field( 'timu_ic_export_alt_text' ); ?>
 									<button type="submit" class="button button-secondary"><?php esc_html_e( 'Export JSON', 'thisismyurl-image-support' ); ?></button>
 								</form>
+
+								<div class="timu-bulk-bar" style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:6px 0 12px;padding:10px;background:#f6f7f7;border:1px solid #dcdcde;">
+									<label for="timu-alt-source"><?php esc_html_e( 'Bulk fill from', 'thisismyurl-image-support' ); ?></label>
+									<select id="timu-alt-source">
+										<option value="title"><?php esc_html_e( 'Attachment title', 'thisismyurl-image-support' ); ?></option>
+										<option value="filename"><?php esc_html_e( 'Humanised filename', 'thisismyurl-image-support' ); ?></option>
+										<option value="template"><?php esc_html_e( 'Template', 'thisismyurl-image-support' ); ?></option>
+									</select>
+									<input type="text" id="timu-alt-template" class="regular-text" style="display:none;flex:1 1 240px;"
+										placeholder="{site_name} – {title}"
+										aria-label="<?php esc_attr_e( 'Alt text template', 'thisismyurl-image-support' ); ?>">
+									<button id="timu-alt-fill-selected" class="button button-secondary"
+										data-nonce="<?php echo esc_attr( $ajax_nonce ); ?>">
+										<?php esc_html_e( 'Fill selected', 'thisismyurl-image-support' ); ?>
+									</button>
+									<button id="timu-alt-fill-all" class="button button-primary"
+										data-nonce="<?php echo esc_attr( $ajax_nonce ); ?>">
+										<?php esc_html_e( 'Fill all on this page', 'thisismyurl-image-support' ); ?>
+									</button>
+									<span class="timu-alt-tokens description" style="flex-basis:100%;margin:0;">
+										<?php esc_html_e( 'Template tokens: {title}, {filename}, {site_name}. Bulk fill only writes rows whose alt is still empty.', 'thisismyurl-image-support' ); ?>
+									</span>
+								</div>
+								<div id="timu-alt-result"></div>
+
 								<table class="widefat striped" id="audit-alt-table" style="border:none;box-shadow:none;">
 									<thead>
 										<tr>
+											<th style="width:30px;"><input type="checkbox" id="timu-alt-check-all" aria-label="<?php esc_attr_e( 'Select all rows', 'thisismyurl-image-support' ); ?>"></th>
 											<th><?php esc_html_e( 'Preview', 'thisismyurl-image-support' ); ?></th>
 											<th><?php esc_html_e( 'ID', 'thisismyurl-image-support' ); ?></th>
-											<th><?php esc_html_e( 'Title', 'thisismyurl-image-support' ); ?></th>
-											<th><?php esc_html_e( 'File Name', 'thisismyurl-image-support' ); ?></th>
+											<th><?php esc_html_e( 'Title / file name', 'thisismyurl-image-support' ); ?></th>
+											<th style="width:40%;"><?php esc_html_e( 'Alt text', 'thisismyurl-image-support' ); ?></th>
 										</tr>
 									</thead>
 									<tbody>
-										<?php foreach ( $no_alt_ids as $att_id ) : ?>
-											<tr>
+										<?php foreach ( $alt_page['ids'] as $att_id ) : ?>
+											<tr id="timu-alt-row-<?php echo esc_attr( $att_id ); ?>">
+												<td><input type="checkbox" class="timu-alt-cb" value="<?php echo esc_attr( $att_id ); ?>"></td>
 												<td><?php echo wp_kses_post( wp_get_attachment_image( $att_id, array( 40, 40 ) ) ); ?></td>
 												<td>
 													<a href="<?php echo esc_url( (string) get_edit_post_link( $att_id ) ); ?>">
 														#<?php echo esc_html( $att_id ); ?>
 													</a>
 												</td>
-												<td><?php echo esc_html( get_the_title( $att_id ) ); ?></td>
-												<td><?php echo esc_html( basename( (string) get_attached_file( $att_id ) ) ); ?></td>
+												<td>
+													<?php echo esc_html( get_the_title( $att_id ) ); ?><br>
+													<span class="description" style="font-size:0.85em;"><?php echo esc_html( wp_basename( (string) get_attached_file( $att_id ) ) ); ?></span>
+												</td>
+												<td>
+													<input type="text" class="timu-alt-input regular-text" style="width:100%;"
+														data-id="<?php echo esc_attr( $att_id ); ?>"
+														value=""
+														aria-label="<?php echo esc_attr( sprintf( /* translators: %d: attachment ID */ __( 'Alt text for attachment %d', 'thisismyurl-image-support' ), $att_id ) ); ?>">
+													<span class="timu-alt-status" aria-live="polite" style="margin-left:6px;font-size:0.85em;color:#646970;"></span>
+												</td>
 											</tr>
 										<?php endforeach; ?>
 									</tbody>
 								</table>
+								<?php
+								self::render_pager( $base_url, 'alt_paged', (int) $alt_page['paged'], (int) $alt_page['max_pages'], 'audit-alt-fix' );
+								?>
 							<?php else : ?>
 								<p><?php esc_html_e( 'All image attachments have alt text.', 'thisismyurl-image-support' ); ?></p>
+							<?php endif; ?>
+						</div>
+					</div>
+
+					<!-- Clean up filenames and titles -->
+					<div class="postbox" id="audit-normalize">
+						<h2 class="hndle">
+							<span>
+								<?php esc_html_e( 'Clean up titles, captions, and descriptions', 'thisismyurl-image-support' ); ?>
+								<span style="font-weight:normal;font-size:0.85em;color:#646970;">(<?php echo esc_html( (int) $junk_page['total'] ); ?>)</span>
+							</span>
+						</h2>
+						<div class="inside">
+							<p class="description"><?php esc_html_e( 'Attachments whose title still reads as a camera or screenshot default (IMG_4738, DSC01234, a bare number, or a title equal to the raw filename). Derive a clean title from the filename, and optionally set the caption and description from a template. Preview the batch before you apply it. This only edits each image\'s own title, caption, and description — never another post.', 'thisismyurl-image-support' ); ?></p>
+							<?php if ( ! empty( $junk_page['rows'] ) ) : ?>
+								<div class="timu-bulk-bar" style="display:flex;flex-direction:column;gap:8px;margin:6px 0 12px;padding:10px;background:#f6f7f7;border:1px solid #dcdcde;">
+									<label>
+										<input type="checkbox" id="timu-norm-do-title" checked>
+										<?php esc_html_e( 'Set title', 'thisismyurl-image-support' ); ?>
+										<input type="text" id="timu-norm-title-template" class="regular-text" style="margin-left:6px;width:320px;"
+											placeholder="<?php esc_attr_e( 'Leave blank to use the humanised filename', 'thisismyurl-image-support' ); ?>"
+											aria-label="<?php esc_attr_e( 'Title template', 'thisismyurl-image-support' ); ?>">
+									</label>
+									<label>
+										<input type="checkbox" id="timu-norm-do-caption">
+										<?php esc_html_e( 'Set caption', 'thisismyurl-image-support' ); ?>
+										<input type="text" id="timu-norm-caption-template" class="regular-text" style="margin-left:6px;width:320px;"
+											placeholder="{title}"
+											aria-label="<?php esc_attr_e( 'Caption template', 'thisismyurl-image-support' ); ?>">
+									</label>
+									<label>
+										<input type="checkbox" id="timu-norm-do-description">
+										<?php esc_html_e( 'Set description', 'thisismyurl-image-support' ); ?>
+										<input type="text" id="timu-norm-description-template" class="regular-text" style="margin-left:6px;width:320px;"
+											placeholder="{title}"
+											aria-label="<?php esc_attr_e( 'Description template', 'thisismyurl-image-support' ); ?>">
+									</label>
+									<span class="description" style="margin:0;">
+										<?php esc_html_e( 'Template tokens: {title}, {filename}, {site_name}. Caption and description are only written when their box is checked.', 'thisismyurl-image-support' ); ?>
+									</span>
+									<div>
+										<button id="timu-norm-preview" class="button button-secondary"
+											data-nonce="<?php echo esc_attr( $ajax_nonce ); ?>">
+											<?php esc_html_e( 'Preview changes', 'thisismyurl-image-support' ); ?>
+										</button>
+										<button id="timu-norm-apply" class="button button-primary" disabled
+											data-nonce="<?php echo esc_attr( $ajax_nonce ); ?>">
+											<?php esc_html_e( 'Apply to selected', 'thisismyurl-image-support' ); ?>
+										</button>
+									</div>
+								</div>
+								<div id="timu-norm-result"></div>
+
+								<table class="widefat striped" id="audit-normalize-table" style="border:none;box-shadow:none;">
+									<thead>
+										<tr>
+											<th style="width:30px;"><input type="checkbox" id="timu-norm-check-all" checked aria-label="<?php esc_attr_e( 'Select all rows', 'thisismyurl-image-support' ); ?>"></th>
+											<th><?php esc_html_e( 'Preview', 'thisismyurl-image-support' ); ?></th>
+											<th><?php esc_html_e( 'ID', 'thisismyurl-image-support' ); ?></th>
+											<th><?php esc_html_e( 'Current title', 'thisismyurl-image-support' ); ?></th>
+											<th><?php esc_html_e( 'File name', 'thisismyurl-image-support' ); ?></th>
+										</tr>
+									</thead>
+									<tbody>
+										<?php foreach ( $junk_page['rows'] as $row ) : ?>
+											<tr id="timu-norm-row-<?php echo esc_attr( $row['id'] ); ?>">
+												<td><input type="checkbox" class="timu-norm-cb" value="<?php echo esc_attr( $row['id'] ); ?>" checked></td>
+												<td><?php echo wp_kses_post( wp_get_attachment_image( (int) $row['id'], array( 40, 40 ) ) ); ?></td>
+												<td>
+													<a href="<?php echo esc_url( (string) get_edit_post_link( (int) $row['id'] ) ); ?>">
+														#<?php echo esc_html( $row['id'] ); ?>
+													</a>
+												</td>
+												<td class="timu-norm-current-title"><?php echo esc_html( $row['title'] ); ?></td>
+												<td><?php echo esc_html( $row['filename'] ); ?></td>
+											</tr>
+										<?php endforeach; ?>
+									</tbody>
+								</table>
+								<?php
+								self::render_pager( $base_url, 'junk_paged', (int) $junk_page['paged'], (int) $junk_page['max_pages'], 'audit-normalize' );
+								?>
+							<?php else : ?>
+								<p><?php esc_html_e( 'No attachments with junk titles found.', 'thisismyurl-image-support' ); ?></p>
 							<?php endif; ?>
 						</div>
 					</div>
@@ -1510,6 +2499,28 @@ class TIMU_IC_Admin {
 													value="<?php echo esc_attr( $options['report_bandwidth_cost_gb'] ); ?>"
 													class="regular-text" style="max-width:180px;">
 											</p>
+										</td>
+									</tr>
+									<tr>
+										<th scope="row"><label for="timu-attachment-pages"><?php esc_html_e( 'Attachment pages', 'thisismyurl-image-support' ); ?></label></th>
+										<td>
+											<?php $attachment_mode = isset( $options['attachment_pages'] ) ? (string) $options['attachment_pages'] : 'noindex'; ?>
+											<select id="timu-attachment-pages"
+												name="<?php echo esc_attr( TIMU_IC::OPTION_KEY ); ?>[attachment_pages]">
+												<option value="noindex" <?php selected( 'noindex', $attachment_mode ); ?>><?php esc_html_e( 'No-index (default)', 'thisismyurl-image-support' ); ?></option>
+												<option value="redirect_parent" <?php selected( 'redirect_parent', $attachment_mode ); ?>><?php esc_html_e( 'Redirect to parent post', 'thisismyurl-image-support' ); ?></option>
+												<option value="redirect_file" <?php selected( 'redirect_file', $attachment_mode ); ?>><?php esc_html_e( 'Redirect to image file', 'thisismyurl-image-support' ); ?></option>
+												<option value="disable" <?php selected( 'disable', $attachment_mode ); ?>><?php esc_html_e( 'Leave as-is (WordPress default)', 'thisismyurl-image-support' ); ?></option>
+											</select>
+											<p class="description">
+												<?php esc_html_e( 'WordPress builds a thin standalone page for every image attachment, which can clutter search results. Choose how those pages behave:', 'thisismyurl-image-support' ); ?>
+											</p>
+											<ul class="description" style="list-style:disc;margin:6px 0 0 18px;">
+												<li><?php esc_html_e( 'No-index: keep the page but tell search engines not to index it. Safe and reversible.', 'thisismyurl-image-support' ); ?></li>
+												<li><?php esc_html_e( 'Redirect to parent post: send visitors to the post the image belongs to, falling back to the file when there is no parent.', 'thisismyurl-image-support' ); ?></li>
+												<li><?php esc_html_e( 'Redirect to image file: send visitors straight to the image file.', 'thisismyurl-image-support' ); ?></li>
+												<li><?php esc_html_e( 'Leave as-is: do nothing — keep the standard WordPress attachment page.', 'thisismyurl-image-support' ); ?></li>
+											</ul>
 										</td>
 									</tr>
 									<tr>

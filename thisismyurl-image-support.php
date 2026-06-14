@@ -3,7 +3,7 @@
  * Plugin Name: Image Support by Christopher Ross
  * Plugin URI:  https://thisismyurl.com/thisismyurl-image-support/
  * Description: Image filename cleanup, duplicate merging, WebP discovery, photo-credit attribution, and alt-text accessibility fallback. The cleanup/merge features are destructive and require opt-in via the "Confirm destructive operations" option before any rename, merge, or post_content rewrite runs; the photo-credit and alt-fallback features are benign and never touch files or post content.
- * Version:     1.6165.0949
+ * Version:     1.6165.1224
  * Requires at least: 6.4
  * Requires PHP: 8.1
  * Author:      Christopher Ross
@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * for asset enqueuing and cache-busting. Kept in sync with the `Version:`
  * header above by the release process.
  */
-define( 'TIMU_IMAGE_SUPPORT_VERSION', '1.6165.0949' );
+define( 'TIMU_IMAGE_SUPPORT_VERSION', '1.6165.1224' );
 define( 'TIMU_IMAGE_SUPPORT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'TIMU_IMAGE_SUPPORT_URL', plugin_dir_url( __FILE__ ) );
 
@@ -78,9 +78,14 @@ require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/class-sanitizer.php';
 require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/class-options.php';
 require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/class-content-sync.php';
 require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/class-audit.php';
+require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/class-score.php';
+require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/class-curation.php';
+require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/class-run-log.php';
 require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/class-file-ops.php';
 require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/class-scheduler.php';
 require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/class-rest.php';
+require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/class-attachment-seo.php';
+require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/class-media-organization.php';
 require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/class-admin.php';
 
 class TIMU_IC {
@@ -1805,11 +1810,14 @@ $GLOBALS['timu_ic_instance'] = new TIMU_IC();
  * Boot the class engine. TIMU_IC (the coordinator + cleanup instance) is now
  * defined, so the static constants and helpers these bootstraps depend on are
  * available. Order mirrors the require order: file-ops registers the upload
- * hook, scheduler wires cron, REST registers routes, admin builds the tabbed UI.
+ * hook, scheduler wires cron, REST registers routes, admin builds the tabbed UI,
+ * attachment-SEO conditionally wires its robots/redirect hooks.
  */
 TIMU_IC_File_Ops::init();
 TIMU_IC_Scheduler::init();
 TIMU_IC_REST::init();
+TIMU_IC_Attachment_SEO::init();
+TIMU_IC_Media_Organization::init();
 TIMU_IC_Admin::init();
 
 // Async WebP generation handler. Bound at file scope so wp-cron can invoke it

@@ -41,7 +41,17 @@ class TIMU_IC_Options {
             'cron_daily_cap'             => 50,
             'emit_attachment_schema'     => 0,
             'acquire_license_page_url'   => '',
+            'attachment_pages'           => 'noindex',
         );
+    }
+
+    /**
+     * Allowed values for the attachment-page SEO control.
+     *
+     * @return string[]
+     */
+    public static function attachment_page_modes() {
+        return array( 'noindex', 'redirect_parent', 'redirect_file', 'disable' );
     }
 
     /**
@@ -111,6 +121,11 @@ class TIMU_IC_Options {
         $cron_cap = isset( $input['cron_daily_cap'] ) ? absint( $input['cron_daily_cap'] ) : (int) $defaults['cron_daily_cap'];
         $cron_cap = min( 500, max( 1, $cron_cap ) );
 
+        $attachment_pages = isset( $input['attachment_pages'] ) ? sanitize_key( (string) $input['attachment_pages'] ) : $defaults['attachment_pages'];
+        if ( ! in_array( $attachment_pages, self::attachment_page_modes(), true ) ) {
+            $attachment_pages = $defaults['attachment_pages'];
+        }
+
         return array(
             'batch_size'                => $batch_size,
             'auto_optimize_batch'       => $auto_batch,
@@ -132,6 +147,7 @@ class TIMU_IC_Options {
             'cron_daily_cap'             => $cron_cap,
             'emit_attachment_schema'     => isset( $input['emit_attachment_schema'] ) ? 1 : 0,
             'acquire_license_page_url'   => isset( $input['acquire_license_page_url'] ) ? esc_url_raw( (string) $input['acquire_license_page_url'] ) : '',
+            'attachment_pages'           => $attachment_pages,
         );
     }
 

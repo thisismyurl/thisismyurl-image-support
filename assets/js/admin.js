@@ -199,4 +199,262 @@ jQuery(function($) {
 
         runNextSeoBatch();
     });
+
+    // -------------------------------------------------------------------------
+    // Audit tab — metadata curation (alt editing + title/caption/description
+    // normalisation). These blocks no-op unless their markup is on the page.
+    // -------------------------------------------------------------------------
+
+    const curationActions = config.actions || {};
+    const curationStrings = config.strings || {};
+
+    const notice = (selector, type, message) => {
+        $(selector).html(
+            '<div class="notice notice-' + type + ' inline"><p>' +
+            $('<div/>').text(message).html() +
+            '</p></div>'
+        );
+    };
+
+    // --- Inline alt editing ---------------------------------------------------
+
+    if ($('#audit-alt-fix').length) {
+        $('#timu-alt-check-all').on('change', function () {
+            $('.timu-alt-cb').prop('checked', this.checked);
+        });
+
+        $('#timu-alt-source').on('change', function () {
+            $('#timu-alt-template').toggle(this.value === 'template');
+        });
+
+        // Inline single-row save on blur or Enter.
+        const saveAltRow = ($input) => {
+            const id = parseInt($input.data('id'), 10);
+            const $status = $input.closest('td').find('.timu-alt-status');
+            $status.css('color', '#646970').text(curationStrings.saving || 'Saving…');
+
+            $.post(ajaxUrl, {
+                action: curationActions.saveAlt,
+                nonce: nonce,
+                attachment_id: id,
+                alt: $input.val()
+            }).done(function (res) {
+                if (res && res.success) {
+                    $status.css('color', '#008a20').text(curationStrings.saved || 'Saved');
+                } else {
+                    $status.css('color', '#d63638').text(curationStrings.saveFailed || 'Save failed');
+                }
+            }).fail(function () {
+                $status.css('color', '#d63638').text(curationStrings.saveFailed || 'Save failed');
+            });
+        };
+
+        $('#audit-alt-table').on('blur', '.timu-alt-input', function () {
+            if ($(this).val().trim() !== '') {
+                saveAltRow($(this));
+            }
+        });
+        $('#audit-alt-table').on('keydown', '.timu-alt-input', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                $(this).trigger('blur');
+            }
+        });
+
+        // Bulk fill (selected rows or every row on the page).
+        const bulkFill = (ids, $btn) => {
+            if (!ids.length) {
+                notice('#timu-alt-result', 'warning', curationStrings.selectAtLeast || 'Select at least one image first.');
+                return;
+            }
+            const source = $('#timu-alt-source').val();
+            const template = $('#timu-alt-template').val() || '';
+            const original = $btn.text();
+            $btn.prop('disabled', true).text(curationStrings.working || 'Working…');
+
+            $.post(ajaxUrl, {
+                action: curationActions.bulkFillAlt,
+                nonce: $btn.data('nonce'),
+                attachment_ids: ids,
+                source: source,
+                template: template
+            }).done(function (res) {
+                if (res && res.success && res.data) {
+                    notice('#timu-alt-result', 'success',
+                        'Filled ' + res.data.filled + ', skipped ' + res.data.skipped +
+                        ' of ' + res.data.processed + ' images.');
+                    setTimeout(function () { window.location.reload(); }, 1200);
+                } else {
+                    notice('#timu-alt-result', 'error', curationStrings.requestFailed || 'Request failed.');
+                }
+            }).fail(function () {
+                notice('#timu-alt-result', 'error', curationStrings.requestFailed || 'Request failed.');
+            }).always(function () {
+                $btn.prop('disabled', false).text(original);
+            });
+        };
+
+        $('#timu-alt-fill-selected').on('click', function () {
+            const ids = $('.timu-alt-cb:checked').map(function () {
+                return parseInt(this.value, 10);
+            }).get();
+            bulkFill(ids, $(this));
+        });
+
+        $('#timu-alt-fill-all').on('click', function () {
+            const ids = $('.timu-alt-cb').map(function () {
+                return parseInt(this.value, 10);
+            }).get();
+            bulkFill(ids, $(this));
+        });
+    }
+
+    // --- Title / caption / description normalisation --------------------------
+
+    if ($('#audit-normalize').length) {
+        $('#timu-norm-check-all').on('change', function () {
+            $('.timu-norm-cb').prop('checked', this.checked);
+        });
+
+        const collectNormOpts = () => ({
+            do_title: $('#timu-norm-do-title').is(':checked') ? 1 : 0,
+            do_caption: $('#timu-norm-do-caption').is(':checked') ? 1 : 0,
+            do_description: $('#timu-norm-do-description').is(':checked') ? 1 : 0,
+            title_template: $('#timu-norm-title-template').val() || '',
+            caption_template: $('#timu-norm-caption-template').val() || '',
+            description_template: $('#timu-norm-description-template').val() || ''
+        });
+
+        const selectedNormIds = () => $('.timu-norm-cb:checked').map(function () {
+            return parseInt(this.value, 10);
+        }).get();
+
+        const renderPreviewTable = (previews) => {
+            if (!previews.length) {
+                notice('#timu-norm-result', 'warning', curationStrings.noChanges || 'No changes to apply for the selected images.');
+                $('#timu-norm-apply').prop('disabled', true);
+                return;
+            }
+            let html = '<table class="widefat striped" style="margin-top:10px;"><thead><tr>' +
+                '<th>ID</th><th>Field</th><th>Before</th><th>After</th></tr></thead><tbody>';
+            previews.forEach(function (p) {
+                ['title', 'caption', 'description'].forEach(function (field) {
+                    if (p[field] && p[field].change) {
+                        html += '<tr><td>#' + p.id + '</td><td>' + field + '</td>' +
+                            '<td>' + $('<div/>').text(p[field].from || '(empty)').html() + '</td>' +
+                            '<td><strong>' + $('<div/>').text(p[field].to || '(empty)').html() + '</strong></td></tr>';
+                    }
+                });
+            });
+            html += '</tbody></table>';
+            $('#timu-norm-result').html(
+                '<div class="notice notice-info inline"><p>' +
+                'Previewing ' + previews.length + ' image(s) with changes. Review, then apply.' +
+                '</p></div>' + html
+            );
+            $('#timu-norm-apply').prop('disabled', false);
+        };
+
+        $('#timu-norm-preview').on('click', function () {
+            const ids = selectedNormIds();
+            if (!ids.length) {
+                notice('#timu-norm-result', 'warning', curationStrings.selectAtLeast || 'Select at least one image first.');
+                return;
+            }
+            const $btn = $(this);
+            const original = $btn.text();
+            $btn.prop('disabled', true).text(curationStrings.working || 'Working…');
+
+            $.post(ajaxUrl, $.extend({
+                action: curationActions.normalizePreview,
+                nonce: $btn.data('nonce'),
+                attachment_ids: ids
+            }, collectNormOpts())).done(function (res) {
+                if (res && res.success && res.data) {
+                    renderPreviewTable(res.data.previews || []);
+                } else {
+                    notice('#timu-norm-result', 'error', curationStrings.requestFailed || 'Request failed.');
+                }
+            }).fail(function () {
+                notice('#timu-norm-result', 'error', curationStrings.requestFailed || 'Request failed.');
+            }).always(function () {
+                $btn.prop('disabled', false).text(original);
+            });
+        });
+
+        $('#timu-norm-apply').on('click', function () {
+            const ids = selectedNormIds();
+            if (!ids.length) {
+                notice('#timu-norm-result', 'warning', curationStrings.selectAtLeast || 'Select at least one image first.');
+                return;
+            }
+            const $btn = $(this);
+            const original = $btn.text();
+            $btn.prop('disabled', true).text(curationStrings.working || 'Working…');
+
+            $.post(ajaxUrl, $.extend({
+                action: curationActions.normalizeApply,
+                nonce: $btn.data('nonce'),
+                attachment_ids: ids
+            }, collectNormOpts())).done(function (res) {
+                if (res && res.success && res.data) {
+                    notice('#timu-norm-result', 'success',
+                        'Updated ' + res.data.changed + ' of ' + res.data.processed + ' images.');
+                    setTimeout(function () { window.location.reload(); }, 1400);
+                } else {
+                    notice('#timu-norm-result', 'error', curationStrings.requestFailed || 'Request failed.');
+                }
+            }).fail(function () {
+                notice('#timu-norm-result', 'error', curationStrings.requestFailed || 'Request failed.');
+            }).always(function () {
+                $btn.prop('disabled', false).text(original);
+            });
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // Optimize tab — session-level undo. Reverses a recorded cleanup run as a
+    // unit. No-ops unless the Recent runs panel is on the page.
+    // -------------------------------------------------------------------------
+
+    if ($('#timu-recent-runs').length) {
+        $('#timu-recent-runs').on('click', '.timu-undo-run', function () {
+            const $btn = $(this);
+            const runId = $btn.data('run');
+            const confirmMsg = strings.confirmUndoRun ||
+                'Undo this cleanup run? Every file, name, and content link it changed will be restored.';
+
+            if (!window.confirm(confirmMsg)) {
+                return;
+            }
+
+            const original = $btn.text();
+            $btn.prop('disabled', true).text(strings.undoing || 'Undoing…');
+
+            $.post(ajaxUrl, {
+                action: curationActions.undoRun,
+                nonce: $btn.data('nonce'),
+                run_id: runId
+            }).done(function (res) {
+                if (res && res.success && res.data) {
+                    let msg = 'Reversed ' + res.data.reversed + ' item(s).';
+                    const failures = Array.isArray(res.data.failures) ? res.data.failures : [];
+                    if (failures.length) {
+                        msg += ' ' + failures.length + ' could not be reversed: ' + failures.join(' ');
+                        notice('#timu-undo-result', 'warning', msg);
+                    } else {
+                        notice('#timu-undo-result', 'success', msg);
+                    }
+                    $('#timu-run-' + runId).fadeOut();
+                    setTimeout(function () { window.location.reload(); }, 2000);
+                } else {
+                    notice('#timu-undo-result', 'error', (res && res.data) || strings.undoFailed || 'Undo failed.');
+                    $btn.prop('disabled', false).text(original);
+                }
+            }).fail(function () {
+                notice('#timu-undo-result', 'error', strings.undoFailed || 'Undo failed.');
+                $btn.prop('disabled', false).text(original);
+            });
+        });
+    }
 });

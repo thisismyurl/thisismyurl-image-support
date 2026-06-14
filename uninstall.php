@@ -58,10 +58,28 @@ foreach ( $timu_photo_credit_meta_keys as $timu_meta_key ) {
 	delete_metadata( 'post', 0, $timu_meta_key, '', true );
 }
 
+// Clean up the media-folder taxonomy terms this plugin created. The taxonomy is
+// not registered during uninstall (the plugin is not loaded), so terms are read
+// straight from the term tables by the literal taxonomy slug and removed with
+// the lower-level wp_delete_term(). Keep this slug in sync with
+// TIMU_IC_Media_Organization::TAXONOMY.
+global $wpdb;
+$timu_folder_taxonomy = 'timu_media_folder';
+$timu_folder_term_ids = $wpdb->get_col(
+	$wpdb->prepare(
+		"SELECT term_id FROM {$wpdb->term_taxonomy} WHERE taxonomy = %s",
+		$timu_folder_taxonomy
+	)
+);
+foreach ( (array) $timu_folder_term_ids as $timu_term_id ) {
+	wp_delete_term( (int) $timu_term_id, $timu_folder_taxonomy );
+}
+
 // Clean up plugin options.
 delete_option( 'timu_ic_last_id' );
 delete_option( 'thisismyurl_image_support_confirm_destructive' );
 delete_option( 'thisismyurl_image_support_default_credit' );
+delete_option( 'thisismyurl_image_support_runs' );
 
 // Clear any pending async WebP-generation jobs.
 wp_clear_scheduled_hook( 'thisismyurl_image_support_generate_webp' );

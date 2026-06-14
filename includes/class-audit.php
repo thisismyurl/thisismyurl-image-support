@@ -95,6 +95,231 @@ class TIMU_IC_Audit {
     }
 
     /**
+     * Page size for the bounded walk over candidate attachments.
+     */
+    const UNUSED_PAGE_SIZE = 200;
+
+    /**
+     * Hard ceiling on how many attachments the unused-detector inspects before
+     * it switches from an exact count to a sampled extrapolation. Mirrors the
+     * dedup factor's SCAN_CAP discipline so a very large library cannot stall an
+     * admin request.
+     */
+    const UNUSED_SCAN_CAP = 2000;
+
+    /**
+     * Count image attachments that are referenced nowhere — the "true unused"
+     * signal, distinct from filesystem orphans (files with no DB record).
+     *
+     * An attachment is considered *used* when any of the following hold:
+     *
+     *  - it is set as a post's featured image (`_thumbnail_id` meta);
+     *  - its numeric ID appears in any post's `post_content` as a `wp-image-<id>`
+     *    class or a `[gallery ids="…"]` / block `"ids":[…]` reference;
+     *  - its file URL (or just the uploaded basename) appears in any post's
+     *    `post_content` (covers `<img src>`, `<a href>`, and srcset references);
+     *  - it has a non-zero `post_parent` (attached to a post).
+     *
+     * Anything that fails every test is unused. The walk is bounded: candidate
+     * IDs are paged `UNUSED_PAGE_SIZE` at a time and inspection stops at
+     * `UNUSED_SCAN_CAP`, after which the affected count is extrapolated from the
+     * sampled rate — the same shape the Library Health Score's dedup and GPS
+     * factors use.
+     *
+     * @return array{count:int, scanned:int, sampled:bool, total:int} Detector result.
+     */
+    public static function count_unused_attachments() {
+        $total = self::count_image_attachments();
+        if ( 0 === $total ) {
+            return array(
+                'count'   => 0,
+                'scanned' => 0,
+                'sampled' => false,
+                'total'   => 0,
+            );
+        }
+
+        $thumbnail_ids = self::get_featured_image_ids();
+
+        $unused  = 0;
+        $scanned = 0;
+
+        foreach ( self::walk_image_attachment_ids() as $id ) {
+            if ( $scanned >= self::UNUSED_SCAN_CAP ) {
+                break;
+            }
+            ++$scanned;
+
+            if ( self::attachment_is_referenced( $id, $thumbnail_ids ) ) {
+                continue;
+            }
+
+            ++$unused;
+        }
+
+        // Extrapolate from the sample when the library exceeded the cap.
+        $sampled = ( $scanned > 0 && $scanned < $total );
+        $count   = $sampled
+            ? (int) round( ( $unused / $scanned ) * $total )
+            : $unused;
+
+        return array(
+            'count'   => $count,
+            'scanned' => $scanned,
+            'sampled' => $sampled,
+            'total'   => $total,
+        );
+    }
+
+    /**
+     * Bounded count of image attachments in the library.
+     *
+     * @return int
+     */
+    private static function count_image_attachments() {
+        global $wpdb;
+
+        return (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(*) FROM {$wpdb->posts}
+                 WHERE post_type = 'attachment' AND post_mime_type LIKE %s",
+                $wpdb->esc_like( 'image/' ) . '%'
+            )
+        );
+    }
+
+    /**
+     * Set of every attachment ID currently used as a post's featured image.
+     *
+     * Read once per detector run as a single bounded query, then probed in
+     * memory — far cheaper than a `_thumbnail_id` meta lookup per candidate.
+     *
+     * @return array<int,true> Attachment ID => true lookup map.
+     */
+    private static function get_featured_image_ids() {
+        global $wpdb;
+
+        $ids = $wpdb->get_col(
+            $wpdb->prepare(
+                "SELECT DISTINCT meta_value FROM {$wpdb->postmeta} WHERE meta_key = %s",
+                '_thumbnail_id'
+            )
+        );
+
+        $map = array();
+        foreach ( (array) $ids as $id ) {
+            $id = (int) $id;
+            if ( $id > 0 ) {
+                $map[ $id ] = true;
+            }
+        }
+
+        return $map;
+    }
+
+    /**
+     * Whether a single attachment is referenced anywhere that marks it as used.
+     *
+     * @param int             $attachment_id Attachment ID.
+     * @param array<int,true> $thumbnail_ids Featured-image lookup map.
+     *
+     * @return bool True when the attachment is in use.
+     */
+    private static function attachment_is_referenced( $attachment_id, $thumbnail_ids ) {
+        global $wpdb;
+
+        $attachment_id = (int) $attachment_id;
+
+        // Featured image — cheapest test, do it first.
+        if ( isset( $thumbnail_ids[ $attachment_id ] ) ) {
+            return true;
+        }
+
+        // Attached to a parent post.
+        $parent = (int) get_post_field( 'post_parent', $attachment_id );
+        if ( $parent > 0 ) {
+            return true;
+        }
+
+        // ID-based references: the `wp-image-<id>` class the block/classic editor
+        // writes, and the `ids="…"` / `"ids":[…]` lists galleries store.
+        $id_like_class   = '%' . $wpdb->esc_like( 'wp-image-' . $attachment_id ) . '%';
+        $id_like_idsattr = '%' . $wpdb->esc_like( '"ids":[' ) . '%';
+        $gallery_like    = '%' . $wpdb->esc_like( '[gallery' ) . '%';
+
+        // URL / basename reference: covers <img src>, <a href>, and srcset.
+        $url      = wp_get_attachment_url( $attachment_id );
+        $basename = $url ? wp_basename( $url ) : '';
+
+        $clauses = array( 'post_content LIKE %s' );
+        $params  = array( $id_like_class );
+
+        if ( '' !== $basename ) {
+            $clauses[] = 'post_content LIKE %s';
+            $params[]  = '%' . $wpdb->esc_like( $basename ) . '%';
+        }
+
+        // Only test the gallery/ids patterns when the numeric ID also appears,
+        // so a shared `"ids":[` fragment alone never marks an image as used.
+        $numeric_like = '%' . $wpdb->esc_like( (string) $attachment_id ) . '%';
+        $clauses[]    = '( post_content LIKE %s AND ( post_content LIKE %s OR post_content LIKE %s ) )';
+        $params[]     = $numeric_like;
+        $params[]     = $id_like_idsattr;
+        $params[]     = $gallery_like;
+
+        $where = implode( ' OR ', $clauses );
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $where is built from static, parameterised clauses only; every value is bound below.
+        $sql = $wpdb->prepare(
+            "SELECT ID FROM {$wpdb->posts}
+             WHERE post_status IN ('publish','draft','private','pending','future')
+               AND post_type NOT IN ('attachment','revision')
+               AND ( {$where} )
+             LIMIT 1",
+            $params
+        );
+
+        return (bool) $wpdb->get_var( $sql );
+    }
+
+    /**
+     * Generator yielding image-attachment IDs in bounded pages, oldest first.
+     *
+     * @return Generator<int>
+     */
+    private static function walk_image_attachment_ids() {
+        $paged     = 1;
+        $max_loops = 10000;
+
+        do {
+            $query = new WP_Query(
+                array(
+                    'post_type'      => 'attachment',
+                    'post_status'    => 'inherit',
+                    'post_mime_type' => 'image',
+                    'posts_per_page' => self::UNUSED_PAGE_SIZE,
+                    'paged'          => $paged,
+                    'fields'         => 'ids',
+                    'no_found_rows'  => true,
+                    'orderby'        => 'ID',
+                    'order'          => 'ASC',
+                )
+            );
+
+            if ( empty( $query->posts ) ) {
+                break;
+            }
+
+            foreach ( $query->posts as $id ) {
+                yield (int) $id;
+            }
+
+            ++$paged;
+            --$max_loops;
+        } while ( $max_loops > 0 );
+    }
+
+    /**
      * Return attachment posts whose attached file does not exist on disk.
      *
      * @return WP_Post[]

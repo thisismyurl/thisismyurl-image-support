@@ -436,6 +436,18 @@ class TIMU_IC_File_Ops {
             $active_abs = $new_abs;
             $active_rel = preg_replace( '/[^\/]+$/', $new_name, $original_rel );
 
+            // Tie this rename into the active batch run so "undo last run" can
+            // reverse it via restore_image(). No-ops outside a batch.
+            TIMU_IC_Run_Log::record_item(
+                $attachment_id,
+                'rename',
+                array(
+                    'original_rel'      => $original_rel,
+                    'original_basename' => $original_basename,
+                    'new_basename'      => $new_name,
+                )
+            );
+
             TIMU_IC::increment_stat( 'renamed', 1 );
         }
 
@@ -460,6 +472,18 @@ class TIMU_IC_File_Ops {
                     $editor->resize( $max_dimension, $max_dimension, false );
                     $saved = $editor->save( $active_abs );
                     if ( ! is_wp_error( $saved ) ) {
+                        // restore_image() reverses rename + downscale together
+                        // from the per-item backup taken before either ran, so
+                        // the run record only needs the attachment reference.
+                        TIMU_IC_Run_Log::record_item(
+                            $attachment_id,
+                            'downscale',
+                            array(
+                                'original_rel'      => $original_rel,
+                                'original_basename' => $original_basename,
+                            )
+                        );
+
                         TIMU_IC::increment_stat( 'resized', 1 );
                     }
                 }
@@ -573,6 +597,28 @@ class TIMU_IC_File_Ops {
             $best_url = wp_get_attachment_url( $best_id );
             $dup_rel  = (string) get_post_meta( $id, '_wp_attached_file', true );
 
+            // Capture the full attachment record before the force-delete erases
+            // it. Force-delete bypasses Trash, so the sidecar is the only path
+            // back to this attachment's post + meta for an un-merge.
+            $sidecar = self::write_merge_sidecar( (int) $id, (int) $best_id );
+
+            $dup_backup_file = '';
+            $dup_path        = get_attached_file( $id );
+            if ( $dup_path && file_exists( $dup_path ) ) {
+                $upload_dir     = wp_upload_dir();
+                $dup_backup_dir = trailingslashit( $upload_dir['basedir'] . '/timu-image-backups/duplicates' );
+                wp_mkdir_p( $dup_backup_dir );
+                $dup_backup_file = $dup_backup_dir . $id . '-' . basename( $dup_path );
+                @copy( $dup_path, $dup_backup_file );
+
+                // Extra safety snapshot before the duplicate is force-deleted.
+                TIMU_IC_Backup_Adapter::snapshot(
+                    /* translators: %d: attachment ID of the duplicate being merged. */
+                    sprintf( __( 'Pre-merge duplicate: attachment %d', 'thisismyurl-image-support' ), (int) $id ),
+                    array( $dup_path )
+                );
+            }
+
             if ( $dup_url && $best_url ) {
                 $wpdb->update(
                     $wpdb->postmeta,
@@ -596,20 +642,21 @@ class TIMU_IC_File_Ops {
                 add_post_meta( $best_id, TIMU_IC::LEGACY_PATH_KEY, ltrim( $dup_rel, '/' ), false );
             }
 
-            $dup_path = get_attached_file( $id );
-            if ( $dup_path && file_exists( $dup_path ) ) {
-                $upload_dir     = wp_upload_dir();
-                $dup_backup_dir = trailingslashit( $upload_dir['basedir'] . '/timu-image-backups/duplicates' );
-                wp_mkdir_p( $dup_backup_dir );
-                @copy( $dup_path, $dup_backup_dir . $id . '-' . basename( $dup_path ) );
-
-                // Extra safety snapshot before the duplicate is force-deleted.
-                TIMU_IC_Backup_Adapter::snapshot(
-                    /* translators: %d: attachment ID of the duplicate being merged. */
-                    sprintf( __( 'Pre-merge duplicate: attachment %d', 'thisismyurl-image-support' ), (int) $id ),
-                    array( $dup_path )
-                );
-            }
+            // Record the merge against the active batch run so undo_run() can
+            // un-merge: restore the file from the duplicates backup, re-insert
+            // the attachment from the sidecar, and reverse the URL relink.
+            TIMU_IC_Run_Log::record_item(
+                (int) $id,
+                'merge',
+                array(
+                    'best_id'         => (int) $best_id,
+                    'sidecar'         => $sidecar,
+                    'dup_backup_file' => $dup_backup_file,
+                    'dup_url'         => (string) $dup_url,
+                    'best_url'        => (string) $best_url,
+                    'dup_rel'         => ltrim( $dup_rel, '/' ),
+                )
+            );
 
             wp_delete_attachment( $id, true );
             TIMU_IC::increment_stat( 'duplicates_removed', 1 );
@@ -663,7 +710,16 @@ class TIMU_IC_File_Ops {
         update_attached_file( $attachment_id, $target_abs );
 
         require_once ABSPATH . 'wp-admin/includes/image.php';
+
+        // Guard the metadata regen: wp_generate_attachment_metadata() re-fires
+        // the wp_generate_attachment_metadata filter that maybe_optimize_on_upload
+        // is registered on. Without this guard the cleanup pipeline would see the
+        // just-restored junk-named file as "needs processing" and immediately
+        // re-rename it, silently undoing the restore. The same static guard that
+        // protects the cleanup pass from re-entry protects the restore here.
+        self::$in_progress[ (int) $attachment_id ] = true;
         $metadata = wp_generate_attachment_metadata( $attachment_id, $target_abs );
+        unset( self::$in_progress[ (int) $attachment_id ] );
         if ( ! is_wp_error( $metadata ) ) {
             wp_update_attachment_metadata( $attachment_id, $metadata );
         }
@@ -673,6 +729,294 @@ class TIMU_IC_File_Ops {
         delete_post_meta( $attachment_id, TIMU_IC::SAVINGS_META_KEY );
         delete_post_meta( $attachment_id, TIMU_IC::PROCESSED_AT_KEY );
         delete_post_meta( $attachment_id, TIMU_IC::HASH_META_KEY );
+
+        return true;
+    }
+
+    /**
+     * Process a batch of attachments inside a recorded run session.
+     *
+     * Opens a run, processes each attachment through the existing per-item
+     * pipeline (which records its own reversible operations against the open
+     * run), then closes the run. The run can be reversed as a unit via
+     * undo_run().
+     *
+     * @param int[]  $attachment_ids Attachment IDs to process.
+     * @param string $source         Origin label for the run record.
+     *
+     * @return array{run_id:string,processed:int[],failed:int[],errors:string[]}
+     */
+    public static function run_batch( array $attachment_ids, $source = 'optimize-batch' ) {
+        $run_id    = TIMU_IC_Run_Log::begin( $source );
+        $processed = array();
+        $failed    = array();
+        $errors    = array();
+
+        foreach ( $attachment_ids as $attachment_id ) {
+            $result = self::process_attachment_for_cleanup( (int) $attachment_id );
+            if ( true === $result ) {
+                $processed[] = (int) $attachment_id;
+            } else {
+                $failed[] = (int) $attachment_id;
+                $errors[] = is_wp_error( $result )
+                    ? $result->get_error_message()
+                    : __( 'Unknown processing error.', 'thisismyurl-image-support' );
+            }
+        }
+
+        TIMU_IC_Run_Log::end();
+
+        return array(
+            'run_id'    => $run_id,
+            'processed' => $processed,
+            'failed'    => $failed,
+            'errors'    => array_values( array_unique( $errors ) ),
+        );
+    }
+
+    /**
+     * Reverse every recorded operation in a run as a unit.
+     *
+     * Reversal order is deliberate: merges first (un-merge re-inserts the
+     * trashed duplicate and reverses its relink while the surviving attachment
+     * is still in its post-merge state), then rename/downscale restores (each
+     * delegates to restore_image(), which restores the file from its per-item
+     * backup and syncs content references back). Each item reports its own
+     * success or failure; a partial failure is collected and surfaced, never
+     * swallowed.
+     *
+     * Undo is restorative, so it runs regardless of the destructive-ops opt-in —
+     * it only reverses writes the pipeline already made.
+     *
+     * @param string $run_id Run to reverse.
+     *
+     * @return array|WP_Error Result map, or WP_Error when the run is unknown.
+     */
+    public static function undo_run( $run_id ) {
+        $run = TIMU_IC_Run_Log::get( $run_id );
+        if ( null === $run ) {
+            return new WP_Error( 'unknown_run', __( 'That cleanup run is no longer available to undo.', 'thisismyurl-image-support' ) );
+        }
+
+        if ( ! empty( $run['undone_at'] ) ) {
+            return new WP_Error( 'already_undone', __( 'That cleanup run has already been undone.', 'thisismyurl-image-support' ) );
+        }
+
+        $items = isset( $run['items'] ) ? (array) $run['items'] : array();
+
+        // Reverse merges before file restores. Within each group, walk newest
+        // record first so any later operation on the same attachment is undone
+        // before the earlier one it depended on.
+        $merges  = array();
+        $restores = array();
+        foreach ( array_reverse( $items ) as $item ) {
+            if ( 'merge' === ( $item['operation'] ?? '' ) ) {
+                $merges[] = $item;
+            } else {
+                $restores[] = $item;
+            }
+        }
+
+        $reversed = 0;
+        $failures = array();
+
+        foreach ( $merges as $item ) {
+            $result = self::undo_merge( $item );
+            if ( is_wp_error( $result ) ) {
+                $failures[] = $result->get_error_message();
+            } else {
+                ++$reversed;
+            }
+        }
+
+        // A rename and a downscale on the same attachment both reverse to the
+        // single per-item backup, so restore_image() only needs to run once per
+        // attachment. Dedupe by attachment ID.
+        $restored_ids = array();
+        foreach ( $restores as $item ) {
+            $att_id = (int) ( $item['attachment_id'] ?? 0 );
+            if ( ! $att_id || isset( $restored_ids[ $att_id ] ) ) {
+                continue;
+            }
+            $restored_ids[ $att_id ] = true;
+
+            if ( self::restore_image( $att_id ) ) {
+                ++$reversed;
+            } else {
+                $failures[] = sprintf(
+                    /* translators: %d: attachment ID that could not be restored. */
+                    __( 'Could not restore attachment %d (backup missing or already restored).', 'thisismyurl-image-support' ),
+                    $att_id
+                );
+            }
+        }
+
+        TIMU_IC_Run_Log::mark_undone( $run_id );
+
+        return array(
+            'run_id'   => $run_id,
+            'reversed' => $reversed,
+            'failures' => $failures,
+        );
+    }
+
+    /**
+     * Write a JSON sidecar of an attachment's full record before a merge.
+     *
+     * The merge force-deletes the duplicate, bypassing Trash, so this sidecar is
+     * the un-merge's only source for the post row and meta. Stored under the
+     * backups directory alongside the duplicates file copy.
+     *
+     * @param int $duplicate_id Attachment about to be merged away.
+     * @param int $best_id      Surviving attachment it merges into.
+     *
+     * @return string Absolute sidecar path, or empty string on failure.
+     */
+    private static function write_merge_sidecar( $duplicate_id, $best_id ) {
+        $post = get_post( $duplicate_id );
+        if ( ! $post ) {
+            return '';
+        }
+
+        $upload_dir   = wp_upload_dir();
+        $sidecar_dir  = trailingslashit( $upload_dir['basedir'] . '/timu-image-backups/merge-sidecars' );
+        if ( ! wp_mkdir_p( $sidecar_dir ) ) {
+            return '';
+        }
+
+        $payload = array(
+            'duplicate_id'  => (int) $duplicate_id,
+            'best_id'       => (int) $best_id,
+            'timestamp'     => gmdate( 'c' ),
+            'post'          => $post->to_array(),
+            'meta'          => get_post_meta( $duplicate_id ),
+            'attached_file' => (string) get_post_meta( $duplicate_id, '_wp_attached_file', true ),
+        );
+
+        $path = $sidecar_dir . 'attachment-' . (int) $duplicate_id . '-' . time() . '.json';
+        if ( false === file_put_contents( $path, wp_json_encode( $payload, JSON_PRETTY_PRINT ) ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+            return '';
+        }
+
+        return $path;
+    }
+
+    /**
+     * Reverse a single recorded merge.
+     *
+     * Restores the duplicate file from the duplicates backup, re-inserts the
+     * attachment from its sidecar, reverses the content URL relink, and removes
+     * the legacy-path marker from the surviving attachment.
+     *
+     * Caveat: force-delete erased the original post ID, so the re-inserted
+     * attachment receives a NEW ID. Inline content references are relinked from
+     * the survivor's URL back to the duplicate's URL, which restores the visible
+     * markup; any code that hard-coded the old numeric attachment ID will still
+     * point at the survivor. This is surfaced in the run report.
+     *
+     * @param array $item Recorded merge item.
+     *
+     * @return true|WP_Error
+     */
+    private static function undo_merge( $item ) {
+        $payload         = isset( $item['payload'] ) ? (array) $item['payload'] : array();
+        $sidecar         = isset( $payload['sidecar'] ) ? (string) $payload['sidecar'] : '';
+        $dup_backup_file = isset( $payload['dup_backup_file'] ) ? (string) $payload['dup_backup_file'] : '';
+        $best_id         = isset( $payload['best_id'] ) ? (int) $payload['best_id'] : 0;
+        $dup_url         = isset( $payload['dup_url'] ) ? (string) $payload['dup_url'] : '';
+        $best_url        = isset( $payload['best_url'] ) ? (string) $payload['best_url'] : '';
+        $dup_rel         = isset( $payload['dup_rel'] ) ? (string) $payload['dup_rel'] : '';
+
+        if ( '' === $sidecar || ! file_exists( $sidecar ) ) {
+            return new WP_Error(
+                'merge_sidecar_missing',
+                __( 'Merge sidecar is missing; the merged duplicate cannot be re-created.', 'thisismyurl-image-support' )
+            );
+        }
+
+        $raw    = file_get_contents( $sidecar ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_get_contents
+        $record = json_decode( (string) $raw, true );
+        if ( ! is_array( $record ) || empty( $record['post'] ) ) {
+            return new WP_Error( 'merge_sidecar_corrupt', __( 'Merge sidecar is unreadable.', 'thisismyurl-image-support' ) );
+        }
+
+        $upload_dir = wp_upload_dir();
+        $target_rel = '' !== $dup_rel ? $dup_rel : (string) ( $record['attached_file'] ?? '' );
+        $target_abs = trailingslashit( $upload_dir['basedir'] ) . ltrim( $target_rel, '/' );
+
+        // Put the duplicate's file back from the backup copy.
+        if ( '' !== $dup_backup_file && file_exists( $dup_backup_file ) && '' !== $target_rel ) {
+            if ( wp_mkdir_p( dirname( $target_abs ) ) ) {
+                copy( $dup_backup_file, $target_abs );
+            }
+        }
+
+        // Re-insert the attachment post. Force-delete erased the old ID, so this
+        // gets a fresh one.
+        $post_data                = (array) $record['post'];
+        $original_id              = (int) $post_data['ID'];
+        unset( $post_data['ID'], $post_data['guid'] );
+        $post_data['post_type']   = 'attachment';
+        $post_data['post_status'] = 'inherit';
+
+        $new_id = wp_insert_attachment( $post_data, $target_abs, (int) $post_data['post_parent'] );
+        if ( is_wp_error( $new_id ) || ! $new_id ) {
+            return new WP_Error( 'merge_reinsert_failed', __( 'Could not re-create the merged attachment.', 'thisismyurl-image-support' ) );
+        }
+
+        // Restore meta from the sidecar (skip keys WordPress will regenerate).
+        $skip_meta = array( '_wp_attached_file', '_wp_attachment_metadata' );
+        $meta      = isset( $record['meta'] ) ? (array) $record['meta'] : array();
+        foreach ( $meta as $key => $values ) {
+            if ( in_array( $key, $skip_meta, true ) ) {
+                continue;
+            }
+            foreach ( (array) $values as $value ) {
+                add_post_meta( $new_id, $key, maybe_unserialize( $value ) );
+            }
+        }
+
+        update_post_meta( $new_id, '_wp_attached_file', ltrim( $target_rel, '/' ) );
+
+        if ( file_exists( $target_abs ) ) {
+            require_once ABSPATH . 'wp-admin/includes/image.php';
+            $regen = wp_generate_attachment_metadata( $new_id, $target_abs );
+            if ( ! is_wp_error( $regen ) ) {
+                wp_update_attachment_metadata( $new_id, $regen );
+            }
+        }
+
+        // Reverse the content URL relink: survivor URL back to the duplicate's
+        // URL across post_content.
+        if ( '' !== $dup_url && '' !== $best_url ) {
+            global $wpdb;
+            $new_url = wp_get_attachment_url( $new_id );
+            $restore_to = $new_url ? $new_url : $dup_url;
+            $wpdb->query(
+                $wpdb->prepare(
+                    "UPDATE {$wpdb->posts} SET post_content = REPLACE(post_content, %s, %s) WHERE post_content LIKE %s",
+                    $best_url,
+                    $restore_to,
+                    '%' . $wpdb->esc_like( $best_url ) . '%'
+                )
+            );
+        }
+
+        // Drop the legacy-path marker the merge added to the survivor.
+        if ( $best_id && '' !== $dup_rel ) {
+            delete_post_meta( $best_id, TIMU_IC::LEGACY_PATH_KEY, $dup_rel );
+        }
+
+        // NOTE: the merge re-pointed every _thumbnail_id row that equalled the
+        // duplicate to the survivor, but recorded nothing about which rows those
+        // were. Reversing the swap by matching meta_value = best_id would also
+        // re-point posts that legitimately used the survivor as their featured
+        // image, corrupting them. We deliberately do NOT reverse the featured-
+        // image swap here; the re-created attachment exists and inline content
+        // is relinked, but any post whose FEATURED image was the merged-away
+        // duplicate keeps the survivor as its thumbnail. This is the one part of
+        // a merge undo that is not clean, and it is surfaced in the run report.
+        unset( $original_id );
 
         return true;
     }
