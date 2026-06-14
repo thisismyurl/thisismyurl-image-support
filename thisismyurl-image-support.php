@@ -3,7 +3,7 @@
  * Plugin Name: Image Support by Christopher Ross
  * Plugin URI:  https://thisismyurl.com/thisismyurl-image-support/
  * Description: Image filename cleanup, duplicate merging, WebP discovery, photo-credit attribution, and alt-text accessibility fallback. The cleanup/merge features are destructive and require opt-in via the "Confirm destructive operations" option before any rename, merge, or post_content rewrite runs; the photo-credit and alt-fallback features are benign and never touch files or post content.
- * Version:     1.6164.1421
+ * Version:     1.6165.0949
  * Requires at least: 6.4
  * Requires PHP: 8.1
  * Author:      Christopher Ross
@@ -27,9 +27,18 @@ if ( ! defined( 'ABSPATH' ) ) {
  * for asset enqueuing and cache-busting. Kept in sync with the `Version:`
  * header above by the release process.
  */
-define( 'TIMU_IMAGE_SUPPORT_VERSION', '1.6164.1421' );
+define( 'TIMU_IMAGE_SUPPORT_VERSION', '1.6165.0949' );
 define( 'TIMU_IMAGE_SUPPORT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'TIMU_IMAGE_SUPPORT_URL', plugin_dir_url( __FILE__ ) );
+
+/**
+ * Absolute path to this main plugin file.
+ *
+ * The class engine (class-admin.php) reads this for plugin_basename() when it
+ * registers the plugin_action_links filter, so it must point at the bootstrap
+ * file rather than at any include.
+ */
+define( 'TIMU_IC_FILE', __FILE__ );
 
 /**
  * Feature modules. Each is self-contained — registers its own hooks on load.
@@ -50,15 +59,239 @@ require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/photo-credit-schema.php';
 require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/image-alt-fallback.php';
 require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/abilities.php';
 
+/**
+ * Class engine. These eight classes own the tabbed admin, settings storage,
+ * filesystem operations, audit reads, REST routes, the scheduler, and the
+ * upload-time optimize pipeline. They reference the coordinator surface on
+ * TIMU_IC below (constants + static helpers), so TIMU_IC must be declared
+ * before their bootstraps fire — but the class files only declare classes on
+ * require, so loading them here (ahead of TIMU_IC) is safe. Their init()
+ * calls happen after TIMU_IC is instantiated, at the bottom of this file.
+ *
+ * Dependency order: leaf utilities (sanitizer, options, content-sync) first,
+ * then audit, then file-ops (uses sanitizer + content-sync + audit), then
+ * scheduler / rest / admin which orchestrate the rest.
+ */
+require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/interface-compat.php';
+require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/class-backup-adapter.php';
+require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/class-sanitizer.php';
+require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/class-options.php';
+require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/class-content-sync.php';
+require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/class-audit.php';
+require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/class-file-ops.php';
+require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/class-scheduler.php';
+require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/class-rest.php';
+require_once TIMU_IMAGE_SUPPORT_DIR . 'includes/class-admin.php';
+
 class TIMU_IC {
+
+    /**
+     * Settings array option key (class-engine settings UI).
+     */
+    const OPTION_KEY = 'thisismyurl_image_support_options';
+
+    /**
+     * register_setting() group slug for the settings form.
+     */
+    const SETTINGS_GROUP = 'thisismyurl_image_support';
+
+    /**
+     * Option holding the last-detected image-engine environment snapshot.
+     */
+    const ENV_OPTION_KEY = 'thisismyurl_image_support_env';
+
+    /**
+     * Attachment meta: relative path of the originally-uploaded file.
+     * Value preserved from the monolith so existing installs keep their data.
+     */
+    const ORIGINAL_PATH_KEY = '_timu_original_path';
+
+    /**
+     * Attachment meta: basename of the originally-uploaded file.
+     * Value preserved from the monolith so existing installs keep their data.
+     */
+    const ORIGINAL_FILENAME_KEY = '_timu_original_filename';
+
+    /**
+     * Attachment meta (multi): legacy relative paths a merged duplicate used to
+     * live at, so old inline URLs can still be resolved after a dedupe merge.
+     */
+    const LEGACY_PATH_KEY = '_timu_legacy_path';
+
+    /**
+     * Attachment meta: unix timestamp the cleanup pipeline last processed this image.
+     */
+    const PROCESSED_AT_KEY = '_timu_processed_at';
+
+    /**
+     * Attachment meta: bytes saved by the most recent optimize pass.
+     */
+    const SAVINGS_META_KEY = '_timu_bytes_saved';
+
+    /**
+     * Attachment meta: md5 of the processed file, used for duplicate detection.
+     */
+    const HASH_META_KEY = '_timu_file_hash';
+
+    /**
+     * Nonce action shared by the admin AJAX endpoints.
+     */
+    const AJAX_NONCE_ACTION = 'timu_ic_ajax';
+
+    /**
+     * Cron hook for the recurring auto-optimize batch.
+     */
+    const CRON_HOOK = 'timu_ic_auto_optimize';
+
+    /**
+     * Cron hook for the daily auto-optimize cap reset.
+     */
+    const CRON_DAILY_RESET_HOOK = 'timu_ic_daily_reset';
+
+    /**
+     * Transient key that throttles the admin-access auto-optimize tick.
+     */
+    const ADMIN_TICK_LOCK = 'timu_ic_admin_tick_lock';
+
+    /**
+     * Option name holding the cumulative run-stats counter array.
+     */
+    const STATS_OPTION_KEY = 'thisismyurl_image_support_stats';
 
     private $backup_dir;
 
+    /**
+     * Map every supported source extension to its canonical MIME type.
+     *
+     * The settings UI iterates this to render the per-extension checkboxes, and
+     * the options sanitiser uses its keys as the extension allow-list.
+     *
+     * @return array<string,string> Extension (lowercase, no dot) => MIME type.
+     */
+    public static function get_extension_mime_map() {
+        $map = array(
+            'jpg'  => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png'  => 'image/png',
+            'gif'  => 'image/gif',
+            'webp' => 'image/webp',
+            'bmp'  => 'image/bmp',
+        );
+
+        /**
+         * Filter the extension-to-MIME map of source formats this plugin handles.
+         *
+         * @since 1.6159
+         *
+         * @param array<string,string> $map Extension => MIME type.
+         */
+        $map = apply_filters( 'thisismyurl_image_support_extension_mime_map', $map );
+
+        return is_array( $map ) ? $map : array( 'jpg' => 'image/jpeg' );
+    }
+
+    /**
+     * Resolve the MIME types currently enabled in settings into a unique list.
+     *
+     * Used by the cleanup/upload pipeline as the post_mime_type filter when
+     * selecting attachments to process.
+     *
+     * @return array<int,string> Unique enabled source MIME types.
+     */
+    public static function get_enabled_source_mimes() {
+        $map      = self::get_extension_mime_map();
+        $options  = get_option( self::OPTION_KEY, array() );
+        $enabled  = isset( $options['enabled_extensions'] ) && is_array( $options['enabled_extensions'] )
+            ? $options['enabled_extensions']
+            : array_keys( $map );
+
+        $mimes = array();
+        foreach ( $enabled as $extension ) {
+            if ( isset( $map[ $extension ] ) ) {
+                $mimes[] = $map[ $extension ];
+            }
+        }
+
+        $mimes = array_values( array_unique( $mimes ) );
+
+        return empty( $mimes ) ? array( 'image/jpeg' ) : $mimes;
+    }
+
+    /**
+     * Whether a usable server-side image engine (Imagick or GD) is available.
+     *
+     * @return bool
+     */
+    public static function has_supported_image_engine() {
+        if ( class_exists( 'Imagick' ) ) {
+            return true;
+        }
+
+        return extension_loaded( 'gd' ) && function_exists( 'imagewebp' );
+    }
+
+    /**
+     * Increment a named cumulative run-stat counter.
+     *
+     * @param string $key   Stat name (e.g. "renamed", "processed").
+     * @param int    $delta Amount to add. Defaults to 1.
+     *
+     * @return void
+     */
+    public static function increment_stat( $key, $delta = 1 ) {
+        $key   = sanitize_key( (string) $key );
+        $stats = get_option( self::STATS_OPTION_KEY, array() );
+        if ( ! is_array( $stats ) ) {
+            $stats = array();
+        }
+
+        $stats[ $key ] = ( isset( $stats[ $key ] ) ? (int) $stats[ $key ] : 0 ) + (int) $delta;
+
+        update_option( self::STATS_OPTION_KEY, $stats, false );
+    }
+
+    /**
+     * Read a named cumulative run-stat counter.
+     *
+     * @param string $key Stat name.
+     *
+     * @return int Counter value, or 0 when unset.
+     */
+    public static function get_stat( $key ) {
+        $key   = sanitize_key( (string) $key );
+        $stats = get_option( self::STATS_OPTION_KEY, array() );
+
+        return is_array( $stats ) && isset( $stats[ $key ] ) ? (int) $stats[ $key ] : 0;
+    }
+
+    /**
+     * Build a UTM-tagged outbound link back to thisismyurl.com.
+     *
+     * @param string $url      Destination URL.
+     * @param string $campaign Campaign slug for the utm_campaign parameter.
+     *
+     * @return string
+     */
+    public static function get_thisismyurl_link( $url, $campaign ) {
+        return add_query_arg(
+            array(
+                'utm_source'   => 'thisismyurl-image-support',
+                'utm_medium'   => 'plugin',
+                'utm_campaign' => sanitize_key( (string) $campaign ),
+            ),
+            esc_url_raw( (string) $url )
+        );
+    }
+
     public function __construct() {
         add_action( 'init', [ $this, 'load_textdomain' ] );
-        add_action( 'admin_menu', [ $this, 'add_menu_page' ] );
+        // The admin menu, settings, plugin-row links, and tabbed UI are now
+        // owned by TIMU_IC_Admin (the class engine), bootstrapped at the bottom
+        // of this file. This instance keeps only the runtime pieces the class
+        // engine does not provide: the cleanup batch runner (driven by abilities
+        // + the image-support CLI), the image-404 -> WebP redirect, the optional
+        // on-render WebP swap, and the legacy restore admin-post handler.
         add_action( 'admin_menu', [ $this, 'cleanup_menus' ] );
-        add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), [ $this, 'add_plugin_action_links' ] );
         // Restore now flows through admin-post.php (POST), not admin_init (GET). See handle_restore_request().
         add_action( 'admin_post_thisismyurl_image_support_restore', [ $this, 'handle_restore_request' ] );
         add_action( 'template_redirect', [ $this, 'handle_image_404_redirects' ] );
@@ -124,10 +357,6 @@ class TIMU_IC {
                 $filesystem->put_contents( $path, $body, FS_CHMOD_FILE );
             }
         }
-    }
-
-    public function add_menu_page() {
-        add_management_page( 'Image Support', 'Image Support', 'manage_options', 'thisismyurl-image-support', [ $this, 'render_admin_page' ] );
     }
 
     /**
@@ -1560,104 +1789,28 @@ class TIMU_IC {
         }
     }
 
-    public function render_admin_page() {
-        if ( ! current_user_can( 'manage_options' ) ) {
-            wp_die( esc_html__( 'You do not have permission to access this page.', 'thisismyurl-image-support' ) );
-        }
-
-        // Settings POST: toggle the destructive-ops confirmation flag.
-        if ( isset( $_POST['thisismyurl_image_support_settings_nonce'] )
-            && wp_verify_nonce( sanitize_key( wp_unslash( $_POST['thisismyurl_image_support_settings_nonce'] ) ), 'thisismyurl_image_support_settings' ) ) {
-            update_option( 'thisismyurl_image_support_confirm_destructive', ! empty( $_POST['confirm_destructive'] ) );
-        }
-
-        $is_post = ! empty( $_POST ) && ( isset( $_POST['dry_run'] ) || isset( $_POST['run_cleanup'] ) );
-        if ( $is_post ) {
-            check_admin_referer( 'thisismyurl_image_support_action', 'thisismyurl_image_support_nonce' );
-        }
-
-        // Batch is capped at 50 to match handle_cleanup()'s internal clamp; the previous 1000 was theatre.
-        $user_batch = $is_post && isset( $_POST['batch_limit'] )
-            ? max( 1, min( 50, (int) wp_unslash( $_POST['batch_limit'] ) ) )
-            : 5;
-
-        $confirmed = (bool) get_option( 'thisismyurl_image_support_confirm_destructive', false );
-        ?>
-        <div class="wrap">
-            <h1>Image Support <span style="font-size: 0.5em; color: #646970;">by thisismyurl.com</span></h1>
-
-            <div class="notice notice-warning" style="padding:12px 16px;">
-                <p><strong><?php esc_html_e( 'This plugin renames files, merges duplicate attachments, and rewrites post_content. Run a dry-run first. Backups land in /wp-content/uploads/timu-image-backups/. The destructive-ops switch is OFF by default.', 'thisismyurl-image-support' ); ?></strong></p>
-            </div>
-
-            <div class="postbox">
-                <h2 class="hndle"><span><?php esc_html_e( 'Settings', 'thisismyurl-image-support' ); ?></span></h2>
-                <div class="inside">
-                    <form method="post">
-                        <?php wp_nonce_field( 'thisismyurl_image_support_settings', 'thisismyurl_image_support_settings_nonce' ); ?>
-                        <p>
-                            <label>
-                                <input type="checkbox" name="confirm_destructive" value="1" <?php checked( $confirmed ); ?> />
-                                <?php esc_html_e( 'I understand this plugin renames files, deletes duplicates, and rewrites post_content. Allow destructive operations.', 'thisismyurl-image-support' ); ?>
-                            </label>
-                        </p>
-                        <p><input type="submit" class="button" value="<?php esc_attr_e( 'Save settings', 'thisismyurl-image-support' ); ?>"></p>
-                    </form>
-                </div>
-            </div>
-
-            <div class="postbox">
-                <h2 class="hndle"><span><?php esc_html_e( 'Cleanup & WebP Sync', 'thisismyurl-image-support' ); ?></span></h2>
-                <div class="inside">
-                    <form method="post">
-                        <?php wp_nonce_field( 'thisismyurl_image_support_action', 'thisismyurl_image_support_nonce' ); ?>
-                        <p>
-                            <label for="batch_limit"><strong><?php esc_html_e( 'Images per Batch:', 'thisismyurl-image-support' ); ?></strong></label>
-                            <input type="number" id="batch_limit" name="batch_limit" value="<?php echo esc_attr( $user_batch ); ?>" min="1" max="50" style="width: 100%;">
-                            <span class="description"><?php esc_html_e( 'Max 50 per run.', 'thisismyurl-image-support' ); ?></span>
-                        </p>
-                        <div style="display: flex; gap: 10px;">
-                            <input type="submit" name="dry_run" class="button" value="<?php esc_attr_e( 'Preview Changes (Dry Run)', 'thisismyurl-image-support' ); ?>">
-                            <input type="submit" name="run_cleanup" class="button button-primary" value="<?php esc_attr_e( 'Update & Sync WebP', 'thisismyurl-image-support' ); ?>" onclick="return confirm('<?php echo esc_js( __( 'Update images and sync WebP? This rewrites post_content and renames files.', 'thisismyurl-image-support' ) ); ?>');">
-                        </div>
-                    </form>
-                    <?php if ( $is_post ) : ?>
-                        <ul style="margin-top:20px; max-height:500px; overflow:auto; background:#f6f7f7; padding:15px; border:1px solid #dcdcde;">
-                            <?php
-                            $is_dry_run = isset( $_POST['dry_run'] );
-                            $webp_hits  = $this->sync_webp_from_filesystem( $is_dry_run );
-                            if ( ! empty( $webp_hits ) ) {
-                                echo '<li><strong>' . esc_html__( 'Filesystem WebP Discovery:', 'thisismyurl-image-support' ) . '</strong></li><ul style="margin-left:20px;">';
-                                foreach ( $webp_hits as $hit ) {
-                                    $label = $is_dry_run
-                                        ? esc_html__( 'Found', 'thisismyurl-image-support' )
-                                        : esc_html__( 'Replaced', 'thisismyurl-image-support' );
-                                    echo '<li>' . $label . ' <code>' . esc_html( $hit['file'] ) . '</code> ' . esc_html__( 'in', 'thisismyurl-image-support' ) . ' ' . esc_html( $hit['dir'] ) . '</li>';
-                                }
-                                echo '</ul><hr>';
-                            }
-                            $this->handle_cleanup( $is_dry_run, $user_batch );
-                            ?>
-                        </ul>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-        <?php
-    }
-
-    public function add_plugin_action_links( $links ) {
-        return array_merge(
-            array(
-                '<a href="' . esc_url( admin_url( 'tools.php?page=thisismyurl-image-support' ) ) . '">' . esc_html__( 'Settings', 'thisismyurl-image-support' ) . '</a>',
-                '<a href="' . esc_url( 'https://github.com/sponsors/thisismyurl' ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Sponsor', 'thisismyurl-image-support' ) . '</a>',
-            ),
-            $links
-        );
-    }
+    // The flat render_admin_page() and add_plugin_action_links() that lived here
+    // have moved to the class engine (TIMU_IC_Admin::render_admin_page() and
+    // TIMU_IC_Admin::add_plugin_action_links()), which serve the tabbed family
+    // UI. Removing them here keeps a single admin surface and a single set of
+    // plugin-row links. The destructive cleanup runner (run_cleanup_batch),
+    // WebP discovery (run_webp_discovery), 404 redirect, and restore handler
+    // remain on this instance because abilities + the image-support CLI drive
+    // them and the class engine does not reimplement them.
 }
 
 $GLOBALS['timu_ic_instance'] = new TIMU_IC();
+
+/**
+ * Boot the class engine. TIMU_IC (the coordinator + cleanup instance) is now
+ * defined, so the static constants and helpers these bootstraps depend on are
+ * available. Order mirrors the require order: file-ops registers the upload
+ * hook, scheduler wires cron, REST registers routes, admin builds the tabbed UI.
+ */
+TIMU_IC_File_Ops::init();
+TIMU_IC_Scheduler::init();
+TIMU_IC_REST::init();
+TIMU_IC_Admin::init();
 
 // Async WebP generation handler. Bound at file scope so wp-cron can invoke it
 // without depending on whether the admin page has been hit this request.

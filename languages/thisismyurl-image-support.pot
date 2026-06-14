@@ -1,0 +1,647 @@
+# Image Support by thisismyurl.com — Translation template.
+# Copyright (C) 2026 Christopher Ross
+# This file is distributed under the same license as the Image Support by thisismyurl.com package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Image Support by thisismyurl.com 0.6123\n"
+"Report-Msgid-Bugs-To: cross@thisismyurl.com\n"
+"POT-Creation-Date: 2026-05-06 15:07+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: xgettext 0.21\n"
+"X-Domain: thisismyurl-image-support\n"
+
+#: includes/class-admin.php:61 includes/class-admin.php:62
+#: includes/class-admin.php:727
+msgid "Image Support"
+msgstr ""
+
+#: includes/class-admin.php:138
+msgid ""
+"Image Support requires GD or Imagick. Neither image engine was detected, so "
+"image optimization tasks cannot run."
+msgstr ""
+
+#: includes/class-admin.php:157 includes/class-admin.php:746
+msgid "Settings"
+msgstr ""
+
+#: includes/class-admin.php:159
+msgid "Donate"
+msgstr ""
+
+#: includes/class-admin.php:195
+msgid "Inspect EXIF data"
+msgstr ""
+
+#: includes/class-admin.php:196 includes/class-admin.php:900
+msgid "Inspect EXIF"
+msgstr ""
+
+#: includes/class-admin.php:215 includes/class-admin.php:260
+#: includes/class-admin.php:284 includes/class-admin.php:320
+#: includes/class-admin.php:346
+msgid "Unauthorized request."
+msgstr ""
+
+#: includes/class-admin.php:223
+msgid "No attachments were provided for batch processing."
+msgstr ""
+
+#: includes/class-admin.php:238
+msgid "Unknown processing error."
+msgstr ""
+
+#: includes/class-admin.php:265 includes/class-admin.php:325
+#: includes/class-admin.php:390
+msgid "Invalid attachment ID."
+msgstr ""
+
+#: includes/class-admin.php:272
+msgid "Image could not be restored."
+msgstr ""
+
+#: includes/class-admin.php:291
+msgid "No attachments provided."
+msgstr ""
+
+#: includes/class-admin.php:333
+msgid "EXIF strip failed."
+msgstr ""
+
+#: includes/class-admin.php:369
+msgid "No valid pairs provided."
+msgstr ""
+
+#: includes/class-admin.php:385 includes/class-admin.php:506
+#: includes/class-admin.php:538 includes/class-admin.php:568
+#: includes/class-admin.php:599
+msgid "Unauthorized."
+msgstr ""
+
+#. translators: %s: attachment title
+#: includes/class-admin.php:423
+#, php-format
+msgid "EXIF/IPTC — %s"
+msgstr ""
+
+#: includes/class-admin.php:429
+msgid "GPS"
+msgstr ""
+
+#: includes/class-admin.php:434
+msgid "No EXIF data found or format not supported."
+msgstr ""
+
+#: includes/class-admin.php:464
+msgid "Strip GPS / Serial (keep copyright)"
+msgstr ""
+
+#: includes/class-admin.php:479
+msgid "Done."
+msgstr ""
+
+#: includes/class-admin.php:479
+msgid "Error."
+msgstr ""
+
+#: includes/class-admin.php:482 includes/class-admin.php:1278
+msgid "Request failed."
+msgstr ""
+
+#: includes/class-admin.php:664
+msgid "You do not have permission to access this page."
+msgstr ""
+
+#: includes/class-admin.php:713
+msgid "Processing…"
+msgstr ""
+
+#: includes/class-admin.php:714
+msgid "Restoring…"
+msgstr ""
+
+#: includes/class-admin.php:715
+msgid "Restore all images? This cannot be undone."
+msgstr ""
+
+#: includes/class-admin.php:716
+msgid "Some images failed:"
+msgstr ""
+
+#. translators: %s: link to thisismyurl.com
+#: includes/class-admin.php:733
+#, php-format
+msgid "by %s"
+msgstr ""
+
+#: includes/class-admin.php:744
+msgid "Optimize"
+msgstr ""
+
+#: includes/class-admin.php:745
+msgid "Audit"
+msgstr ""
+
+#: includes/class-admin.php:747
+msgid "Report"
+msgstr ""
+
+#: includes/class-admin.php:803
+msgid "Image SEO and Safety Dashboard"
+msgstr ""
+
+#: includes/class-admin.php:808
+#, php-format
+msgid "Optimize All %d Images"
+msgstr ""
+
+#: includes/class-admin.php:811 includes/class-admin.php:1001
+msgid "Dry Run (Export CSV)"
+msgstr ""
+
+#: includes/class-admin.php:814
+msgid "Cancel Batch"
+msgstr ""
+
+#: includes/class-admin.php:828
+msgid "Pending Optimizations"
+msgstr ""
+
+#: includes/class-admin.php:836 includes/class-admin.php:869
+#: includes/class-admin.php:1142
+msgid "Preview"
+msgstr ""
+
+#: includes/class-admin.php:837 includes/class-admin.php:870
+#: includes/class-admin.php:1093 includes/class-admin.php:1143
+msgid "ID"
+msgstr ""
+
+#: includes/class-admin.php:838 includes/class-admin.php:871
+#: includes/class-admin.php:1145
+msgid "File Name"
+msgstr ""
+
+#: includes/class-admin.php:851
+msgid "All images optimized!"
+msgstr ""
+
+#: includes/class-admin.php:861
+msgid "Managed Media"
+msgstr ""
+
+#: includes/class-admin.php:872
+msgid "EXIF"
+msgstr ""
+
+#: includes/class-admin.php:873
+msgid "Action"
+msgstr ""
+
+#: includes/class-admin.php:904
+msgid "View"
+msgstr ""
+
+#: includes/class-admin.php:913
+msgid "File Missing"
+msgstr ""
+
+#: includes/class-admin.php:916
+msgid "Restore"
+msgstr ""
+
+#: includes/class-admin.php:919
+msgid "Optimized"
+msgstr ""
+
+#: includes/class-admin.php:933
+msgid "About"
+msgstr ""
+
+#: includes/class-admin.php:935
+msgid ""
+"Cleans file names for SEO readability, hardens image files, and keeps safe "
+"backups to support reversible media optimization."
+msgstr ""
+
+#: includes/class-admin.php:938
+msgid "Bulk Actions"
+msgstr ""
+
+#: includes/class-admin.php:940
+msgid "Restore All Originals"
+msgstr ""
+
+#. translators: %s: link to thisismyurl.com
+#: includes/class-admin.php:949
+#, php-format
+msgid "Provided free by %s."
+msgstr ""
+
+#: includes/class-admin.php:957
+msgid "Donate to Development"
+msgstr ""
+
+#: includes/class-admin.php:978
+msgid "Building report…"
+msgstr ""
+
+#: includes/class-admin.php:982
+msgid "Could not generate dry-run report."
+msgstr ""
+
+#: includes/class-admin.php:1038
+msgid "Orphan Image Files"
+msgstr ""
+
+#: includes/class-admin.php:1043
+msgid ""
+"Files in the uploads directory with no attachment record in the database. "
+"Safe to review before deleting."
+msgstr ""
+
+#: includes/class-admin.php:1048 includes/class-admin.php:1088
+#: includes/class-admin.php:1132
+msgid "Export CSV"
+msgstr ""
+
+#: includes/class-admin.php:1053
+msgid "Relative Path"
+msgstr ""
+
+#: includes/class-admin.php:1054
+msgid "Size"
+msgstr ""
+
+#: includes/class-admin.php:1055
+msgid "Modified"
+msgstr ""
+
+#: includes/class-admin.php:1069
+msgid "No orphan image files found."
+msgstr ""
+
+#: includes/class-admin.php:1078
+msgid "Broken Attachment Records"
+msgstr ""
+
+#: includes/class-admin.php:1083
+msgid "Attachment posts in the database whose file does not exist on disk."
+msgstr ""
+
+#: includes/class-admin.php:1094 includes/class-admin.php:1144
+msgid "Title"
+msgstr ""
+
+#: includes/class-admin.php:1095
+msgid "Expected Path"
+msgstr ""
+
+#: includes/class-admin.php:1113
+msgid "No broken attachments found."
+msgstr ""
+
+#: includes/class-admin.php:1122
+msgid "Attachments Missing Alt Text"
+msgstr ""
+
+#: includes/class-admin.php:1127
+msgid ""
+"Image attachments with no alt text set. Alt text matters for accessibility "
+"and SEO."
+msgstr ""
+
+#: includes/class-admin.php:1137
+msgid "Export JSON"
+msgstr ""
+
+#: includes/class-admin.php:1164
+msgid "All image attachments have alt text."
+msgstr ""
+
+#: includes/class-admin.php:1174
+msgid "Unattached Images Found in Content"
+msgstr ""
+
+#: includes/class-admin.php:1179
+msgid ""
+"These attachments have no parent post (post_parent = 0) but their URL "
+"appears in post content. Re-attaching connects them to their first matching "
+"post."
+msgstr ""
+
+#: includes/class-admin.php:1183
+msgid "Dry run (preview only)"
+msgstr ""
+
+#: includes/class-admin.php:1188
+msgid "Re-attach Selected"
+msgstr ""
+
+#: includes/class-admin.php:1195
+msgid "Attachment"
+msgstr ""
+
+#: includes/class-admin.php:1196
+msgid "Appears In"
+msgstr ""
+
+#: includes/class-admin.php:1197
+msgid "Proposed Parent"
+msgstr ""
+
+#: includes/class-admin.php:1260
+msgid "Select at least one attachment."
+msgstr ""
+
+#: includes/class-admin.php:1273
+msgid "Dry run: would re-attach"
+msgstr ""
+
+#: includes/class-admin.php:1273 includes/class-admin.php:1274
+msgid "attachment(s)."
+msgstr ""
+
+#: includes/class-admin.php:1274
+msgid "Re-attached"
+msgstr ""
+
+#: includes/class-admin.php:1291
+msgid "Background Queue"
+msgstr ""
+
+#: includes/class-admin.php:1296
+msgid "Engine"
+msgstr ""
+
+#: includes/class-admin.php:1300
+msgid "Pending"
+msgstr ""
+
+#: includes/class-admin.php:1304
+msgid "Running"
+msgstr ""
+
+#: includes/class-admin.php:1308
+msgid "Completed"
+msgstr ""
+
+#: includes/class-admin.php:1335
+msgid "Optimization Settings"
+msgstr ""
+
+#: includes/class-admin.php:1341
+msgid "Batch Size"
+msgstr ""
+
+#: includes/class-admin.php:1346
+msgid "Images processed per AJAX request. Default: 10."
+msgstr ""
+
+#: includes/class-admin.php:1350
+msgid "Optimize on Upload"
+msgstr ""
+
+#: includes/class-admin.php:1356
+msgid "Automatically apply image cleanup and hardening after upload."
+msgstr ""
+
+#: includes/class-admin.php:1361
+msgid "Auto Optimize"
+msgstr ""
+
+#: includes/class-admin.php:1368
+msgid "Enable automatic background optimization for pending images."
+msgstr ""
+
+#: includes/class-admin.php:1374
+msgid "Run a small optimization batch during wp-admin page visits."
+msgstr ""
+
+#: includes/class-admin.php:1380
+msgid "Run optimization in WP-Cron."
+msgstr ""
+
+#: includes/class-admin.php:1384
+msgid "Images per auto run:"
+msgstr ""
+
+#: includes/class-admin.php:1392
+msgid "WP-Cron interval:"
+msgstr ""
+
+#: includes/class-admin.php:1396
+msgid "Every 15 minutes"
+msgstr ""
+
+#: includes/class-admin.php:1397
+msgid "Hourly"
+msgstr ""
+
+#: includes/class-admin.php:1398
+msgid "Twice Daily"
+msgstr ""
+
+#: includes/class-admin.php:1399
+msgid "Daily"
+msgstr ""
+
+#: includes/class-admin.php:1406
+msgid "Daily Cleanup Cap"
+msgstr ""
+
+#: includes/class-admin.php:1411
+msgid ""
+"Maximum attachments processed by the cron per calendar day. Resets at "
+"midnight."
+msgstr ""
+
+#: includes/class-admin.php:1415
+msgid "Source Formats"
+msgstr ""
+
+#: includes/class-admin.php:1429
+msgid "Max Image Dimension"
+msgstr ""
+
+#: includes/class-admin.php:1434
+msgid ""
+"Resize oversized images to fit within this width/height while preserving "
+"aspect ratio."
+msgstr ""
+
+#: includes/class-admin.php:1438
+msgid "Metadata Hardening"
+msgstr ""
+
+#: includes/class-admin.php:1445
+msgid ""
+"Remove potentially dangerous metadata such as GPS coordinates, camera model, "
+"serial numbers, and embedded profiles."
+msgstr ""
+
+#: includes/class-admin.php:1451
+msgid ""
+"Embed safe creator credit metadata for thisismyurl.com and site attribution."
+msgstr ""
+
+#: includes/class-admin.php:1455
+msgid ""
+"Imagick is not available on this server. Metadata hardening features need "
+"Imagick."
+msgstr ""
+
+#: includes/class-admin.php:1462
+msgid "Duplicate Cleanup"
+msgstr ""
+
+#: includes/class-admin.php:1468
+msgid ""
+"Safely remove obvious binary duplicates and keep the best version while "
+"preserving links and redirects."
+msgstr ""
+
+#: includes/class-admin.php:1473
+msgid "Exclude Path Patterns"
+msgstr ""
+
+#: includes/class-admin.php:1480
+msgid ""
+"One glob pattern per line. Matching relative paths are skipped by all "
+"destructive operations (cleanup, orphan scan, auto-optimize)."
+msgstr ""
+
+#: includes/class-admin.php:1485
+msgid "Items Per Page"
+msgstr ""
+
+#: includes/class-admin.php:1493
+msgid "Report Assumptions"
+msgstr ""
+
+#: includes/class-admin.php:1497
+msgid "Estimated monthly image requests"
+msgstr ""
+
+#: includes/class-admin.php:1506
+msgid "Bandwidth cost per GB (USD)"
+msgstr ""
+
+#: includes/class-admin.php:1516
+msgid "Outbound UTM Parameters"
+msgstr ""
+
+#: includes/class-admin.php:1522
+msgid ""
+"Allow UTM parameters in links to thisismyurl.com. No private, site-"
+"identifying, account, or user data is included."
+msgstr ""
+
+#: includes/class-admin.php:1528
+msgid "Save Settings"
+msgstr ""
+
+#: includes/class-admin.php:1558
+msgid "Business ROI Report"
+msgstr ""
+
+#: includes/class-admin.php:1560
+msgid ""
+"Track measurable value from SEO-safe image cleanup and optimization over "
+"business-friendly time windows."
+msgstr ""
+
+#: includes/class-admin.php:1564
+msgid "Last 30 Days"
+msgstr ""
+
+#: includes/class-admin.php:1565
+msgid "Last 90 Days"
+msgstr ""
+
+#: includes/class-admin.php:1566
+msgid "Last 12 Months"
+msgstr ""
+
+#: includes/class-admin.php:1567
+msgid "All Time"
+msgstr ""
+
+#: includes/class-admin.php:1581
+msgid "Images Optimized in Period"
+msgstr ""
+
+#: includes/class-admin.php:1585
+msgid "Total Transfer Savings (single request basis)"
+msgstr ""
+
+#: includes/class-admin.php:1589
+msgid "Average Savings per Image"
+msgstr ""
+
+#: includes/class-admin.php:1593
+msgid "Estimated Monthly ROI"
+msgstr ""
+
+#. translators: 1: monthly savings, 2: annual savings
+#: includes/class-admin.php:1599
+#, php-format
+msgid "$%1$s / month (about $%2$s / year)"
+msgstr ""
+
+#. translators: 1: renamed files, 2: resized files, 3: duplicate removals
+#: includes/class-admin.php:1614
+#, php-format
+msgid ""
+"All-time operations: %1$s renamed, %2$s resized, %3$s obvious duplicates "
+"removed."
+msgstr ""
+
+#: includes/class-audit.php:294
+msgid "Imagick is required to strip EXIF data."
+msgstr ""
+
+#: includes/class-audit.php:299 includes/class-file-ops.php:221
+#: includes/class-file-ops.php:272
+msgid "File does not exist."
+msgstr ""
+
+#: includes/class-file-ops.php:225 includes/class-file-ops.php:276
+msgid "Unsupported format."
+msgstr ""
+
+#: includes/class-file-ops.php:230 includes/class-file-ops.php:286
+msgid "Path matches an exclude pattern."
+msgstr ""
+
+#: includes/class-file-ops.php:291
+msgid "Could not create backup directory."
+msgstr ""
+
+#: includes/class-file-ops.php:297
+msgid "Could not create backup file."
+msgstr ""
+
+#: includes/class-file-ops.php:316
+msgid "Could not rename file."
+msgstr ""
+
+#: includes/class-rest.php:132
+msgid "You do not have permission to access this endpoint."
+msgstr ""
+
+#: includes/class-rest.php:249
+msgid "Restore failed. No backup found or file error."
+msgstr ""
+
+#: includes/class-scheduler.php:50
+msgid "Every 15 Minutes"
+msgstr ""

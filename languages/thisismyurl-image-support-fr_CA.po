@@ -1,0 +1,588 @@
+# Image Support by thisismyurl.com — French (Canada) translation.
+# Copyright (C) 2026 Christopher Ross
+# This file is distributed under the same license as the Image Support by thisismyurl.com package.
+# Translators: Christopher Ross <cross@thisismyurl.com>, 2026
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Image Support by thisismyurl.com 0.6126\n"
+"Report-Msgid-Bugs-To: cross@thisismyurl.com\n"
+"POT-Creation-Date: 2026-05-06 15:07+0000\n"
+"PO-Revision-Date: 2026-05-06 15:30+0000\n"
+"Last-Translator: Christopher Ross <cross@thisismyurl.com>\n"
+"Language-Team: French (Canada)\n"
+"Language: fr_CA\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Generator: Manual\n"
+"X-Domain: thisismyurl-image-support\n"
+
+#: includes/class-admin.php
+msgid "Image Support"
+msgstr "Support d'images"
+
+#: includes/class-admin.php
+msgid "Settings"
+msgstr "Paramètres"
+
+#: includes/class-admin.php
+msgid "Donate"
+msgstr "Faire un don"
+
+#: includes/class-admin.php
+msgid "Inspect EXIF data"
+msgstr "Inspecter les données EXIF"
+
+#: includes/class-admin.php
+msgid "Inspect EXIF"
+msgstr "Inspecter l'EXIF"
+
+#: includes/class-admin.php
+msgid "Unauthorized request."
+msgstr "Requête non autorisée."
+
+#: includes/class-admin.php
+msgid "No attachments were provided for batch processing."
+msgstr "Aucune pièce jointe fournie pour le traitement par lots."
+
+#: includes/class-admin.php
+msgid "Unknown processing error."
+msgstr "Erreur de traitement inconnue."
+
+#: includes/class-admin.php
+msgid "Invalid attachment ID."
+msgstr "Identifiant de pièce jointe invalide."
+
+#: includes/class-admin.php
+msgid "Image could not be restored."
+msgstr "L'image n'a pas pu être restaurée."
+
+#: includes/class-admin.php
+msgid "No attachments provided."
+msgstr "Aucune pièce jointe fournie."
+
+#: includes/class-admin.php
+msgid "EXIF strip failed."
+msgstr "La suppression des données EXIF a échoué."
+
+#: includes/class-admin.php
+msgid "No valid pairs provided."
+msgstr "Aucune paire valide fournie."
+
+#: includes/class-admin.php
+msgid "Unauthorized."
+msgstr "Non autorisé."
+
+#: includes/class-admin.php
+msgid "EXIF/IPTC — %s"
+msgstr "EXIF/IPTC — %s"
+
+#: includes/class-admin.php
+msgid "GPS"
+msgstr "GPS"
+
+#: includes/class-admin.php
+msgid "No EXIF data found or format not supported."
+msgstr "Aucune donnée EXIF trouvée ou format non pris en charge."
+
+#: includes/class-admin.php
+msgid "Strip GPS / Serial (keep copyright)"
+msgstr "Supprimer GPS / numéro de série (conserver le droit d'auteur)"
+
+#: includes/class-admin.php
+msgid "Done."
+msgstr "Terminé."
+
+#: includes/class-admin.php
+msgid "Error."
+msgstr "Erreur."
+
+#: includes/class-admin.php
+msgid "Request failed."
+msgstr "Échec de la requête."
+
+#: includes/class-admin.php
+msgid "You do not have permission to access this page."
+msgstr "Vous n'avez pas la permission d'accéder à cette page."
+
+#: includes/class-admin.php
+msgid "Processing…"
+msgstr "Traitement en cours…"
+
+#: includes/class-admin.php
+msgid "Restoring…"
+msgstr "Restauration en cours…"
+
+#: includes/class-admin.php
+msgid "Restore all images? This cannot be undone."
+msgstr "Restaurer toutes les images ? Cette action est irréversible."
+
+#: includes/class-admin.php
+msgid "Some images failed:"
+msgstr "Certaines images ont échoué :"
+
+#: includes/class-admin.php
+msgid "by %s"
+msgstr "par %s"
+
+#: includes/class-admin.php
+msgid "Optimize"
+msgstr "Optimiser"
+
+#: includes/class-admin.php
+msgid "Audit"
+msgstr "Audit"
+
+#: includes/class-admin.php
+msgid "Report"
+msgstr "Rapport"
+
+#: includes/class-admin.php
+msgid "Image SEO and Safety Dashboard"
+msgstr "Tableau de bord SEO et sécurité des images"
+
+#: includes/class-admin.php
+msgid "Optimize All %d Images"
+msgstr "Optimiser les %d images"
+
+#: includes/class-admin.php
+msgid "Dry Run (Export CSV)"
+msgstr "Simulation (Exporter CSV)"
+
+#: includes/class-admin.php
+msgid "Cancel Batch"
+msgstr "Annuler le lot"
+
+#: includes/class-admin.php
+msgid "Pending Optimizations"
+msgstr "Optimisations en attente"
+
+#: includes/class-admin.php
+msgid "Preview"
+msgstr "Aperçu"
+
+#: includes/class-admin.php
+msgid "ID"
+msgstr "ID"
+
+#: includes/class-admin.php
+msgid "File Name"
+msgstr "Nom du fichier"
+
+#: includes/class-admin.php
+msgid "All images optimized!"
+msgstr "Toutes les images sont optimisées !"
+
+#: includes/class-admin.php
+msgid "Managed Media"
+msgstr "Médias gérés"
+
+#: includes/class-admin.php
+msgid "EXIF"
+msgstr "EXIF"
+
+#: includes/class-admin.php
+msgid "Action"
+msgstr "Action"
+
+#: includes/class-admin.php
+msgid "View"
+msgstr "Voir"
+
+#: includes/class-admin.php
+msgid "File Missing"
+msgstr "Fichier manquant"
+
+#: includes/class-admin.php
+msgid "Restore"
+msgstr "Restaurer"
+
+#: includes/class-admin.php
+msgid "Optimized"
+msgstr "Optimisé"
+
+#: includes/class-admin.php
+msgid "About"
+msgstr "À propos"
+
+#: includes/class-admin.php
+msgid "Bulk Actions"
+msgstr "Actions groupées"
+
+#: includes/class-admin.php
+msgid "Restore All Originals"
+msgstr "Restaurer tous les originaux"
+
+#: includes/class-admin.php
+msgid "Provided free by %s."
+msgstr "Fourni gratuitement par %s."
+
+#: includes/class-admin.php
+msgid "Donate to Development"
+msgstr "Contribuer au développement"
+
+#: includes/class-admin.php
+msgid "Building report…"
+msgstr "Génération du rapport en cours…"
+
+#: includes/class-admin.php
+msgid "Could not generate dry-run report."
+msgstr "Impossible de générer le rapport de simulation."
+
+#: includes/class-admin.php
+msgid "Orphan Image Files"
+msgstr "Fichiers images orphelins"
+
+#: includes/class-admin.php
+msgid "Files in the uploads directory with no attachment record in the database. Safe to review before deleting."
+msgstr "Fichiers dans le répertoire de téléversements sans enregistrement de pièce jointe en base de données. À vérifier avant suppression."
+
+#: includes/class-admin.php
+msgid "Export CSV"
+msgstr "Exporter CSV"
+
+#: includes/class-admin.php
+msgid "Relative Path"
+msgstr "Chemin relatif"
+
+#: includes/class-admin.php
+msgid "Size"
+msgstr "Taille"
+
+#: includes/class-admin.php
+msgid "Modified"
+msgstr "Modifié"
+
+#: includes/class-admin.php
+msgid "No orphan image files found."
+msgstr "Aucun fichier image orphelin trouvé."
+
+#: includes/class-admin.php
+msgid "Broken Attachment Records"
+msgstr "Enregistrements de pièces jointes brisés"
+
+#: includes/class-admin.php
+msgid "Attachment posts in the database whose file does not exist on disk."
+msgstr "Pièces jointes en base de données dont le fichier n'existe pas sur le disque."
+
+#: includes/class-admin.php
+msgid "Title"
+msgstr "Titre"
+
+#: includes/class-admin.php
+msgid "Expected Path"
+msgstr "Chemin attendu"
+
+#: includes/class-admin.php
+msgid "No broken attachments found."
+msgstr "Aucune pièce jointe brisée trouvée."
+
+#: includes/class-admin.php
+msgid "Attachments Missing Alt Text"
+msgstr "Pièces jointes sans texte alternatif"
+
+#: includes/class-admin.php
+msgid "Image attachments with no alt text set. Alt text matters for accessibility and SEO."
+msgstr "Pièces jointes images sans texte alternatif défini. Le texte alternatif est important pour l'accessibilité et le référencement."
+
+#: includes/class-admin.php
+msgid "Export JSON"
+msgstr "Exporter JSON"
+
+#: includes/class-admin.php
+msgid "All image attachments have alt text."
+msgstr "Toutes les pièces jointes images ont un texte alternatif."
+
+#: includes/class-admin.php
+msgid "Unattached Images Found in Content"
+msgstr "Images non rattachées trouvées dans le contenu"
+
+#: includes/class-admin.php
+msgid "These attachments have no parent post (post_parent = 0) but their URL appears in post content. Re-attaching connects them to their first matching post."
+msgstr "Ces pièces jointes n'ont pas d'article parent (post_parent = 0) mais leur URL apparaît dans le contenu des articles. Le rattachement les connecte à leur premier article correspondant."
+
+#: includes/class-admin.php
+msgid "Dry run (preview only)"
+msgstr "Simulation (aperçu uniquement)"
+
+#: includes/class-admin.php
+msgid "Re-attach Selected"
+msgstr "Rattacher la sélection"
+
+#: includes/class-admin.php
+msgid "Attachment"
+msgstr "Pièce jointe"
+
+#: includes/class-admin.php
+msgid "Appears In"
+msgstr "Apparaît dans"
+
+#: includes/class-admin.php
+msgid "Proposed Parent"
+msgstr "Parent proposé"
+
+#: includes/class-admin.php
+msgid "Select at least one attachment."
+msgstr "Sélectionnez au moins une pièce jointe."
+
+#: includes/class-admin.php
+msgid "Dry run: would re-attach"
+msgstr "Simulation : rattacherait"
+
+#: includes/class-admin.php
+msgid "attachment(s)."
+msgstr "pièce(s) jointe(s)."
+
+#: includes/class-admin.php
+msgid "Re-attached"
+msgstr "Rattaché(s)"
+
+#: includes/class-admin.php
+msgid "Background Queue"
+msgstr "File d'attente en arrière-plan"
+
+#: includes/class-admin.php
+msgid "Engine"
+msgstr "Moteur"
+
+#: includes/class-admin.php
+msgid "Pending"
+msgstr "En attente"
+
+#: includes/class-admin.php
+msgid "Running"
+msgstr "En cours"
+
+#: includes/class-admin.php
+msgid "Completed"
+msgstr "Terminé"
+
+#: includes/class-admin.php
+msgid "Optimization Settings"
+msgstr "Paramètres d'optimisation"
+
+#: includes/class-admin.php
+msgid "Batch Size"
+msgstr "Taille des lots"
+
+#: includes/class-admin.php
+msgid "Images processed per AJAX request. Default: 10."
+msgstr "Images traitées par requête AJAX. Défaut : 10."
+
+#: includes/class-admin.php
+msgid "Optimize on Upload"
+msgstr "Optimiser au téléversement"
+
+#: includes/class-admin.php
+msgid "Automatically apply image cleanup and hardening after upload."
+msgstr "Appliquer automatiquement le nettoyage et le renforcement des images après le téléversement."
+
+#: includes/class-admin.php
+msgid "Auto Optimize"
+msgstr "Optimisation automatique"
+
+#: includes/class-admin.php
+msgid "Enable automatic background optimization for pending images."
+msgstr "Activer l'optimisation automatique en arrière-plan pour les images en attente."
+
+#: includes/class-admin.php
+msgid "Run a small optimization batch during wp-admin page visits."
+msgstr "Exécuter un petit lot d'optimisation lors des visites de l'interface d'administration WordPress."
+
+#: includes/class-admin.php
+msgid "Run optimization in WP-Cron."
+msgstr "Exécuter l'optimisation via WP-Cron."
+
+#: includes/class-admin.php
+msgid "Images per auto run:"
+msgstr "Images par exécution automatique :"
+
+#: includes/class-admin.php
+msgid "WP-Cron interval:"
+msgstr "Intervalle WP-Cron :"
+
+#: includes/class-admin.php
+msgid "Every 15 minutes"
+msgstr "Toutes les 15 minutes"
+
+#: includes/class-admin.php
+msgid "Hourly"
+msgstr "Toutes les heures"
+
+#: includes/class-admin.php
+msgid "Twice Daily"
+msgstr "Deux fois par jour"
+
+#: includes/class-admin.php
+msgid "Daily"
+msgstr "Quotidien"
+
+#: includes/class-admin.php
+msgid "Daily Cleanup Cap"
+msgstr "Limite journalière de nettoyage"
+
+#: includes/class-admin.php
+msgid "Maximum attachments processed by the cron per calendar day. Resets at midnight."
+msgstr "Nombre maximum de pièces jointes traitées par le cron par jour calendaire. Réinitialisation à minuit."
+
+#: includes/class-admin.php
+msgid "Source Formats"
+msgstr "Formats sources"
+
+#: includes/class-admin.php
+msgid "Max Image Dimension"
+msgstr "Dimension maximale de l'image"
+
+#: includes/class-admin.php
+msgid "Resize oversized images to fit within this width/height while preserving aspect ratio."
+msgstr "Redimensionner les images trop grandes pour qu'elles s'inscrivent dans cette largeur/hauteur en préservant le rapport d'aspect."
+
+#: includes/class-admin.php
+msgid "Metadata Hardening"
+msgstr "Renforcement des métadonnées"
+
+#: includes/class-admin.php
+msgid "Remove potentially dangerous metadata such as GPS coordinates, camera model, serial numbers, and embedded profiles."
+msgstr "Supprimer les métadonnées potentiellement dangereuses telles que les coordonnées GPS, le modèle d'appareil photo, les numéros de série et les profils intégrés."
+
+#: includes/class-admin.php
+msgid "Embed safe creator credit metadata for thisismyurl.com and site attribution."
+msgstr "Intégrer des métadonnées de crédit créateur sécurisées pour thisismyurl.com et l'attribution du site."
+
+#: includes/class-admin.php
+msgid "Imagick is not available on this server. Metadata hardening features need Imagick."
+msgstr "Imagick n'est pas disponible sur ce serveur. Les fonctionnalités de renforcement des métadonnées nécessitent Imagick."
+
+#: includes/class-admin.php
+msgid "Duplicate Cleanup"
+msgstr "Nettoyage des doublons"
+
+#: includes/class-admin.php
+msgid "Safely remove obvious binary duplicates and keep the best version while preserving links and redirects."
+msgstr "Supprimer en toute sécurité les doublons binaires évidents et conserver la meilleure version tout en préservant les liens et les redirections."
+
+#: includes/class-admin.php
+msgid "Exclude Path Patterns"
+msgstr "Modèles de chemins exclus"
+
+#: includes/class-admin.php
+msgid "One glob pattern per line. Matching relative paths are skipped by all destructive operations (cleanup, orphan scan, auto-optimize)."
+msgstr "Un modèle glob par ligne. Les chemins relatifs correspondants sont ignorés par toutes les opérations destructives (nettoyage, analyse des orphelins, optimisation automatique)."
+
+#: includes/class-admin.php
+msgid "Items Per Page"
+msgstr "Éléments par page"
+
+#: includes/class-admin.php
+msgid "Report Assumptions"
+msgstr "Hypothèses du rapport"
+
+#: includes/class-admin.php
+msgid "Estimated monthly image requests"
+msgstr "Requêtes d'images mensuelles estimées"
+
+#: includes/class-admin.php
+msgid "Bandwidth cost per GB (USD)"
+msgstr "Coût de bande passante par Go (USD)"
+
+#: includes/class-admin.php
+msgid "Outbound UTM Parameters"
+msgstr "Paramètres UTM sortants"
+
+#: includes/class-admin.php
+msgid "Allow UTM parameters in links to thisismyurl.com. No private, site-identifying, account, or user data is included."
+msgstr "Autoriser les paramètres UTM dans les liens vers thisismyurl.com. Aucune donnée privée, d'identification de site, de compte ou d'utilisateur n'est incluse."
+
+#: includes/class-admin.php
+msgid "Save Settings"
+msgstr "Enregistrer les paramètres"
+
+#: includes/class-admin.php
+msgid "Business ROI Report"
+msgstr "Rapport de retour sur investissement"
+
+#: includes/class-admin.php
+msgid "Track measurable value from SEO-safe image cleanup and optimization over business-friendly time windows."
+msgstr "Suivez la valeur mesurable du nettoyage et de l'optimisation d'images respectueux du SEO sur des fenêtres temporelles adaptées aux besoins commerciaux."
+
+#: includes/class-admin.php
+msgid "Last 30 Days"
+msgstr "30 derniers jours"
+
+#: includes/class-admin.php
+msgid "Last 90 Days"
+msgstr "90 derniers jours"
+
+#: includes/class-admin.php
+msgid "Last 12 Months"
+msgstr "12 derniers mois"
+
+#: includes/class-admin.php
+msgid "All Time"
+msgstr "Depuis le début"
+
+#: includes/class-admin.php
+msgid "Images Optimized in Period"
+msgstr "Images optimisées sur la période"
+
+#: includes/class-admin.php
+msgid "Total Transfer Savings (single request basis)"
+msgstr "Économies totales de transfert (base requête unique)"
+
+#: includes/class-admin.php
+msgid "Average Savings per Image"
+msgstr "Économies moyennes par image"
+
+#: includes/class-admin.php
+msgid "Estimated Monthly ROI"
+msgstr "Retour sur investissement mensuel estimé"
+
+#: includes/class-admin.php
+msgid "$%1$s / month (about $%2$s / year)"
+msgstr "%1$s $ / mois (environ %2$s $ / an)"
+
+#: includes/class-audit.php
+msgid "Imagick is required to strip EXIF data."
+msgstr "Imagick est requis pour supprimer les données EXIF."
+
+#: includes/class-audit.php
+msgid "File does not exist."
+msgstr "Le fichier n'existe pas."
+
+#: includes/class-file-ops.php
+msgid "Unsupported format."
+msgstr "Format non pris en charge."
+
+#: includes/class-file-ops.php
+msgid "Path matches an exclude pattern."
+msgstr "Le chemin correspond à un modèle d'exclusion."
+
+#: includes/class-file-ops.php
+msgid "Could not create backup directory."
+msgstr "Impossible de créer le répertoire de sauvegarde."
+
+#: includes/class-file-ops.php
+msgid "Could not create backup file."
+msgstr "Impossible de créer le fichier de sauvegarde."
+
+#: includes/class-file-ops.php
+msgid "Could not rename file."
+msgstr "Impossible de renommer le fichier."
+
+#: includes/class-rest.php
+msgid "You do not have permission to access this endpoint."
+msgstr "Vous n'avez pas la permission d'accéder à cet endpoint."
+
+#: includes/class-rest.php
+msgid "Restore failed. No backup found or file error."
+msgstr "Restauration échouée. Aucune sauvegarde trouvée ou erreur de fichier."
+
+#: includes/class-scheduler.php
+msgid "Every 15 Minutes"
+msgstr "Toutes les 15 minutes"
+
+#: thisismyurl-image-support.php
+msgid "Image Support requires GD or Imagick. Neither image engine was detected, so optimization, resize, and metadata hardening are unavailable."
+msgstr "Image Support nécessite GD ou Imagick. Aucun moteur d'image n'a été détecté ; l'optimisation, le redimensionnement et le renforcement des métadonnées ne sont pas disponibles."
