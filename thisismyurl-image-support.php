@@ -12,8 +12,6 @@
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: thisismyurl-image-support
  * Domain Path: /languages
- * Update URI:  https://github.com/thisismyurl/thisismyurl-image-support
- * Network:     false
  *
  * @package TIMU_Image_Support
  */
