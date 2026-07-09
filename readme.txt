@@ -1,9 +1,7 @@
-=== - Image Support by Christopher Ross ===
+=== Image Support by Christopher Ross ===
 Contributors: thisismyurl
-Author: Christopher Ross
 Author URI: https://thisismyurl.com/
 Donate link: https://github.com/sponsors/thisismyurl
-Support Link: https://thisismyurl.com/contact/
 Tags: webp, media, images, optimization, filenames, photo credits, attribution, alt text, accessibility
 Requires at least: 6.4
 Tested up to: 7.0
