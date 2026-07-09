@@ -12,6 +12,7 @@
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: thisismyurl-image-support
  * Domain Path: /languages
+ * Network:     false
  *
  * @package TIMU_Image_Support
  */
@@ -297,6 +298,8 @@ class TIMU_IC {
         add_action( 'admin_menu', [ $this, 'cleanup_menus' ] );
         // Restore now flows through admin-post.php (POST), not admin_init (GET). See handle_restore_request().
         add_action( 'admin_post_thisismyurl_image_support_restore', [ $this, 'handle_restore_request' ] );
+        add_action( 'admin_post_timu_image_support_save_alt', [ $this, 'handle_save_alt_request' ] );
+        add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_admin_assets' ] );
         add_action( 'template_redirect', [ $this, 'handle_image_404_redirects' ] );
 
         // The on-render WebP swap is opt-in. Synchronous GD encoding inside the_content is a footgun

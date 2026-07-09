@@ -1,0 +1,60 @@
+/**
+ * Admin styles for Image Support by thisismyurl.com.
+ * Loaded only on the Tools > Image Support screen.
+ */
+
+/* Alt-text table */
+.timu-alt-table .timu-col-thumb {
+    width: 80px;
+}
+
+.timu-alt-table .timu-col-file {
+    width: 220px;
+    word-break: break-all;
+}
+
+.timu-alt-table td.timu-col-thumb {
+    padding: 6px 10px;
+    vertical-align: middle;
+    text-align: center;
+}
+
+.timu-alt-table td.timu-col-thumb img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 2px;
+}
+
+.timu-alt-table td.timu-col-file code {
+    word-break: break-all;
+}
+
+.timu-alt-table td.timu-col-file .description {
+    color: #646970;
+    font-size: 12px;
+}
+
+/* Pagination */
+.timu-alt-pagination {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 16px 0 8px;
+}
+
+.timu-alt-pagination .timu-page-count {
+    color: #646970;
+}
+
+/* Total-count summary line */
+.timu-alt-count {
+    color: #646970;
+    font-style: italic;
+    margin-bottom: 12px;
+}
+
+/* Tab panel spacing */
+.timu-tab-panel {
+    margin-top: 0;
+}
