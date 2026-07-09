@@ -164,7 +164,7 @@ class TIMU_IC_Admin {
 		$custom_links = array(
 			'<a href="' . esc_url( $settings_url ) . '">' . esc_html__( 'Settings', 'thisismyurl-image-support' ) . '</a>',
 			'<a href="' . esc_url( $donate_url ) . '" target="_blank" rel="noopener noreferrer">'
-				. esc_html__( 'Donate', 'thisismyurl-image-support' ) . '</a>',
+				. esc_html__( 'Sponsor', 'thisismyurl-image-support' ) . '</a>',
 		);
 
 		return array_merge( $custom_links, $links );
@@ -1509,7 +1509,7 @@ class TIMU_IC_Admin {
 							</p>
 							<p>
 								<a href="<?php echo esc_url( $donate_url ); ?>" class="button button-secondary" target="_blank" rel="noopener noreferrer" style="width:100%;text-align:center;">
-									<?php esc_html_e( 'Donate to Development', 'thisismyurl-image-support' ); ?>
+									<?php esc_html_e( 'Sponsor development', 'thisismyurl-image-support' ); ?>
 								</a>
 							</p>
 						</div>
@@ -2572,10 +2572,10 @@ class TIMU_IC_Admin {
 							<p>
 								<?php
 								$ranges = array(
-									'30d'  => __( 'Last 30 Days', 'thisismyurl-image-support' ),
-									'90d'  => __( 'Last 90 Days', 'thisismyurl-image-support' ),
-									'365d' => __( 'Last 12 Months', 'thisismyurl-image-support' ),
-									'all'  => __( 'All Time', 'thisismyurl-image-support' ),
+									'30d'  => __( 'Last 30 days', 'thisismyurl-image-support' ),
+									'90d'  => __( 'Last 90 days', 'thisismyurl-image-support' ),
+									'365d' => __( 'Last 12 months', 'thisismyurl-image-support' ),
+									'all'  => __( 'All time', 'thisismyurl-image-support' ),
 								);
 								foreach ( $ranges as $key => $label ) :
 									$is_active = $key === $report_range;
