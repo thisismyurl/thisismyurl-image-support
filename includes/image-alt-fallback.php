@@ -93,6 +93,15 @@ function thisismyurl_image_support_resolve_alt_fallback( $attachment ) {
 		return trim( $meta_alt );
 	}
 
+	// 1.5. Vortops AI-generated alt (cached on upload or explicit bulk fill).
+	//      No API call here — render-time API calls are too slow. Reads only from cache.
+	if ( class_exists( 'TIMU_Vortops_Client' ) ) {
+		$vortops_alt = (string) get_post_meta( $attachment->ID, TIMU_Vortops_Client::META_DESCRIBE_ALT, true );
+		if ( '' !== trim( $vortops_alt ) ) {
+			return trim( $vortops_alt );
+		}
+	}
+
 	// 2. The attachment title.
 	if ( '' !== trim( (string) $attachment->post_title ) ) {
 		return trim( (string) $attachment->post_title );

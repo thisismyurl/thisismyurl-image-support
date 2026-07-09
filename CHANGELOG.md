@@ -4,6 +4,13 @@ All notable changes to **Christopher Ross - Image Support** are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses the `x.Yddd` versioning scheme: `x` = release class (0 = pre-release, 1 = full), `Y` = last digit of year, `ddd` = Julian day.
 
+## 1.6190.1680 — 2026-07-09
+
+### Added
+- **Vortops AI alt text** — when a Vortops API key is connected, the plugin automatically generates alt text from actual image content on upload (no filename guessing). Results are cached as supplementary metadata and appear as a tier-1.5 fallback: after any alt text already set by an editor, before the post-title fallback. The describe endpoint is planned — the seam is live now and activates when the API is deployed.
+- "Vortops" bulk fill source added to the alt text bulk-fill tool. Calls the AI on each selected image and writes the result directly to the WordPress alt field — an explicit, editor-visible update.
+- Vortops Settings postbox on the Settings tab: API key field, Test Connection button, and capability messaging. The same key works across all thisismyurl plugins.
+
 ## [1.6144] - 2026-05-24
 
 ### Added

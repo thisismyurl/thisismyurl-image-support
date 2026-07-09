@@ -1080,3 +1080,52 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		)
 	);
 }
+
+/**
+ * Pre-fill Vortops AI alt text when an image is uploaded and core alt is empty.
+ *
+ * Fires after upload on the `add_attachment` hook (priority 15, after IPTC
+ * pre-fill at priority 10). Caches the result to META_DESCRIBE_ALT; never
+ * overwrites `_wp_attachment_image_alt` — that belongs to the editor.
+ *
+ * The describe endpoint is not yet deployed; TIMU_Vortops_Client::describe()
+ * returns WP_Error on 404/network failure and this function exits silently.
+ *
+ * @param int $attachment_id Attachment post ID.
+ * @return void
+ */
+function thisismyurl_image_support_vortops_alt_prefill( $attachment_id ) {
+	if ( ! class_exists( 'TIMU_Vortops_Client' ) || ! TIMU_Vortops_Client::is_connected() ) {
+		return;
+	}
+
+	// Only act when the editor hasn't already set an alt.
+	$existing_alt = (string) get_post_meta( $attachment_id, '_wp_attachment_image_alt', true );
+	if ( '' !== trim( $existing_alt ) ) {
+		return;
+	}
+
+	// Only act when we haven't cached a result already.
+	$cached = (string) get_post_meta( $attachment_id, TIMU_Vortops_Client::META_DESCRIBE_ALT, true );
+	if ( '' !== trim( $cached ) ) {
+		return;
+	}
+
+	$file_path = (string) get_attached_file( $attachment_id );
+	if ( '' === $file_path || ! file_exists( $file_path ) ) {
+		return;
+	}
+
+	$result = TIMU_Vortops_Client::describe( $file_path );
+	if ( is_wp_error( $result ) ) {
+		return;
+	}
+
+	if ( '' !== trim( $result['alt_text'] ) ) {
+		update_post_meta( $attachment_id, TIMU_Vortops_Client::META_DESCRIBE_ALT, $result['alt_text'] );
+	}
+	if ( ! empty( $result['tags'] ) ) {
+		update_post_meta( $attachment_id, TIMU_Vortops_Client::META_DESCRIBE_TAGS, wp_json_encode( $result['tags'] ) );
+	}
+}
+add_action( 'add_attachment', 'thisismyurl_image_support_vortops_alt_prefill', 15 );

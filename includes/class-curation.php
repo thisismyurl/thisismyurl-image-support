@@ -36,7 +36,7 @@ class TIMU_IC_Curation {
     /**
      * Alt-text source keys the bulk-fill control accepts.
      */
-    const ALT_SOURCES = array( 'title', 'filename', 'template' );
+    const ALT_SOURCES = array( 'title', 'filename', 'template', 'vortops' );
 
     // -------------------------------------------------------------------------
     // Reads — bounded, paged candidate lists
@@ -319,6 +319,19 @@ class TIMU_IC_Curation {
                 return self::humanize_filename( (string) get_attached_file( $att_id ) );
             case 'template':
                 return self::expand_template( $template, $att_id );
+            case 'vortops':
+                if ( ! class_exists( 'TIMU_Vortops_Client' ) || ! TIMU_Vortops_Client::is_connected() ) {
+                    return '';
+                }
+                $vortops_file = (string) get_attached_file( $att_id );
+                if ( '' === $vortops_file || ! file_exists( $vortops_file ) ) {
+                    return '';
+                }
+                $vortops_result = TIMU_Vortops_Client::describe( $vortops_file );
+                if ( is_wp_error( $vortops_result ) || '' === trim( $vortops_result['alt_text'] ) ) {
+                    return '';
+                }
+                return $vortops_result['alt_text'];
             default:
                 return '';
         }
@@ -391,6 +404,14 @@ class TIMU_IC_Curation {
             }
 
             update_post_meta( $id, '_wp_attachment_image_alt', $value );
+
+            // Also cache to the Vortops alt meta when the source is vortops — this
+            // ensures the alt-fallback filter finds the value even if the editor later
+            // clears _wp_attachment_image_alt.
+            if ( 'vortops' === $source && class_exists( 'TIMU_Vortops_Client' ) ) {
+                update_post_meta( $id, TIMU_Vortops_Client::META_DESCRIBE_ALT, $value );
+            }
+
             ++$filled;
         }
 

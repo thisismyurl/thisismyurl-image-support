@@ -50,6 +50,8 @@ class TIMU_IC_Admin {
 		add_action( 'admin_post_timu_ic_export_broken_csv', array( __CLASS__, 'handle_export_broken_csv' ) );
 		add_action( 'admin_post_timu_ic_export_alt_text_csv', array( __CLASS__, 'handle_export_alt_text_csv' ) );
 		add_action( 'admin_post_timu_ic_export_alt_text_json', array( __CLASS__, 'handle_export_alt_text_json' ) );
+		add_action( 'admin_post_timu_is_vortops_save', array( __CLASS__, 'handle_vortops_save' ) );
+		TIMU_Suite_Settings::register_ajax_handlers();
 
 		// Media Library row action for EXIF inspection.
 		add_filter( 'media_row_actions', array( __CLASS__, 'add_media_row_actions' ), 10, 2 );
@@ -795,6 +797,31 @@ class TIMU_IC_Admin {
 		header( 'Content-Type: application/json; charset=UTF-8' );
 		header( 'Content-Disposition: attachment; filename="timu-missing-alt-' . gmdate( 'Y-m-d' ) . '.json"' );
 		echo wp_json_encode( $rows, JSON_PRETTY_PRINT );
+		exit;
+	}
+
+	/**
+	 * Handle admin-post save for the Vortops API key.
+	 *
+	 * @return void
+	 */
+	public static function handle_vortops_save() {
+		check_admin_referer( 'timu_is_vortops_save', 'timu_is_vortops_nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Unauthorized.', 'thisismyurl-image-support' ) );
+		}
+		$api_key = isset( $_POST['timu_vortops_api_key'] )
+			? sanitize_text_field( wp_unslash( $_POST['timu_vortops_api_key'] ) )
+			: '';
+		if ( '' !== $api_key ) {
+			update_option( TIMU_Vortops_Client::OPTION_KEY, $api_key, false );
+		} else {
+			delete_option( TIMU_Vortops_Client::OPTION_KEY );
+		}
+		wp_safe_redirect( add_query_arg(
+			array( 'page' => 'thisismyurl-image-support', 'tab' => 'settings', 'vortops-saved' => '1' ),
+			admin_url( 'tools.php' )
+		) );
 		exit;
 	}
 
@@ -2540,6 +2567,19 @@ class TIMU_IC_Admin {
 							</form>
 						</div>
 					</div>
+					<?php
+					TIMU_Suite_Settings::render_vortops_postbox( array(
+						'save_action'     => 'timu_is_vortops_save',
+						'nonce_action'    => 'timu_is_vortops_save',
+						'nonce_name'      => 'timu_is_vortops_nonce',
+						'redirect_page'   => 'thisismyurl-image-support',
+						'field_id'        => 'timu_vortops_api_key_is',
+						'btn_id'          => 'btn-vortops-test-is',
+						'result_id'       => 'vortops-test-result-is',
+						'local_available' => true,
+						'local_ok_msg'    => __( 'Alt text is found and filled locally when metadata is present. Vortops adds AI-generated alt text for images that have none — generated from actual image content, not filename guessing.', 'thisismyurl-image-support' ),
+					) );
+					?>
 				</div>
 			</div>
 		</div>
