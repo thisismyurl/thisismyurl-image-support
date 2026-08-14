@@ -1,0 +1,91 @@
+/**
+ * Media list screen additions.
+ *
+ * Deliberately restrained. This sits inside somebody else's admin table, so it borrows
+ * core's own colour variables rather than introducing a palette, and it does not fight
+ * the table's own spacing.
+ */
+
+.column-timu_alt { width: 22%; }
+.column-timu_dimensions { width: 9em; }
+.column-timu_filesize { width: 7em; }
+
+.timu-alt-cell {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	flex-wrap: wrap;
+}
+
+.timu-alt-input {
+	flex: 1 1 12em;
+	min-width: 8em;
+	font-size: 13px;
+}
+
+/* An empty field is the thing this screen exists to surface, so it is marked rather
+   than left to read as an ordinary blank input. */
+.timu-alt-cell.is-empty .timu-alt-input {
+	border-color: #d63638;
+	background-color: #fcf0f1;
+}
+
+.timu-alt-cell.is-saving .timu-alt-input {
+	opacity: 0.6;
+}
+
+.timu-alt-state {
+	flex-basis: 100%;
+	font-size: 12px;
+	line-height: 1.4;
+	min-height: 1.4em;
+}
+
+.timu-alt-state.is-ok { color: #007017; }
+.timu-alt-state.is-error { color: #b32d2e; }
+
+.timu-alt-missing {
+	color: #b32d2e;
+	font-style: italic;
+}
+
+.timu-dims {
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+.timu-size {
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+.timu-size.is-heavy {
+	font-weight: 600;
+	color: #b32d2e;
+}
+
+.timu-oversize {
+	display: inline-block;
+	margin-inline-start: 6px;
+	padding: 1px 6px;
+	border-radius: 9px;
+	font-size: 11px;
+	line-height: 1.6;
+	white-space: nowrap;
+	background: #fcf0f1;
+	color: #b32d2e;
+	border: 1px solid #f0b8b9;
+	cursor: help;
+}
+
+@media screen and (max-width: 782px) {
+	.timu-alt-cell { flex-wrap: nowrap; }
+	.timu-alt-state { flex-basis: auto; }
+}
+
+@media (prefers-color-scheme: dark) {
+	.timu-alt-cell.is-empty .timu-alt-input,
+	.timu-oversize {
+		background-color: transparent;
+	}
+}
