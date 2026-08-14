@@ -4,13 +4,13 @@ All notable changes to **Christopher Ross - Image Support** are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses the `x.Yddd` versioning scheme: `x` = release class (0 = pre-release, 1 = full), `Y` = last digit of year, `ddd` = Julian day.
 
-## 1.6226 — 2026-08-14
+## 1.6226 (2026-08-14)
 
 Rebuilt from scratch as a focused Media list tool. This is a deliberate reduction: roughly 14,800 lines became 1,400, and the plugin now does one thing on one screen.
 
 ### Added
 - **Alt text column with inline editing.** Edit alt text directly in the Media list and save without a page load. Guarded by a nonce and a per-attachment `edit_post` capability check rather than a blanket `upload_files`, so contributors cannot edit other people's uploads.
-- **Dimensions and file size columns.** File size is sortable, backed by a numeric index (`_timu_image_filesize`) that backfills as you browse — no migration step, no batch job. Dimensions are deliberately not sortable: width and height live inside serialized metadata that the database cannot sort on, and offering a control that quietly did nothing would be worse than not offering it.
+- **Dimensions and file size columns.** File size is sortable, backed by a numeric index (`_timu_image_filesize`) that backfills as you browse, with no migration step and no batch job. Dimensions are deliberately not sortable: width and height live inside serialized metadata that the database cannot sort on, and offering a control that quietly did nothing would be worse than not offering it.
 - **Filter dropdown** for missing alt text, has alt text, oversized originals, and files over 1 MB.
 - **Oversized flag** for images meaningfully wider than the largest size the site will ever serve. Calibrated at 1.5× by measurement: core scales uploads to 2560px against a 2048px yardstick, so an ordinary modern upload sits at 1.25× and is not flagged, while a 6000px legacy import lands at 2.93× and is.
 - **Alt text included in Media search.** WordPress searches titles, captions, descriptions and filenames but not alt text, which is often the only place a photograph's subject is written down.
@@ -23,7 +23,7 @@ Rebuilt from scratch as a focused Media list tool. This is a deliberate reductio
 ### Fixed
 - The oversize threshold could never fire. It compared against the largest registered image size at a multiplier no real upload could reach, because core caps uploads at 2560px and registers 2048px on every site.
 - The filter dropdown never rendered. The Media list table fires `restrict_manage_posts` with `$which` set to `bar`, not the `top` the posts list table uses, so the filters worked by URL but no control ever appeared.
-- Documentation claimed an empty alt attribute was respected as a deliberate "decorative" marking. WordPress records no such intent — core writes an empty string whenever an attachment is saved with a blank field, so it is indistinguishable from one nobody filled in. The claim was removed rather than kept as a comfortable fiction.
+- Documentation claimed an empty alt attribute was respected as a deliberate "decorative" marking. WordPress records no such intent, because core writes an empty string whenever an attachment is saved with a blank field, so it is indistinguishable from one nobody filled in. The claim was removed rather than kept as a comfortable fiction.
 
 ### Security
 - One write path, gated by nonce, per-attachment capability check, and an attachment-type check, in that order. Alt text is capped at 1000 characters.

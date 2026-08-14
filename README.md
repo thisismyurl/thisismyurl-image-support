@@ -14,7 +14,7 @@ This puts them on the list.
 - **A filter for the images that need work.** Missing alt text, has alt text, oversized originals, or files over a megabyte.
 - **Dimensions and file size, with file size sortable.** The six megabyte photo somebody dropped into a post in 2019 comes straight to the top.
 - **An oversized flag.** WordPress scales big uploads down on arrival, but images that predate that behaviour, or that were imported straight onto disk, escaped it. Those get flagged.
-- **Search that includes alt text.** WordPress searches titles, captions, descriptions and filenames, but not alt text — often the only place the subject of a photograph is written down. Searching "harbour" now finds the harbour photo even when the file is called `IMG_4821.jpg`.
+- **Search that includes alt text.** WordPress searches titles, captions, descriptions and filenames, but not alt text, often the only place the subject of a photograph is written down. Searching "harbour" now finds the harbour photo even when the file is called `IMG_4821.jpg`.
 
 ## What it does not do
 
@@ -54,11 +54,11 @@ Five filters and two actions, all documented inline:
 
 This release is deliberately about images, and deliberately about one screen. Documents and video raise different questions and deserve their own tools rather than a single screen trying to serve everything at once.
 
-Version 1.6226 is a rebuild. Earlier releases carried a filename cleanup engine, photo credits, WebP generation and a library audit surface. Those are recorded in the issue tracker and preserved in git history at the `pre-mvp-origin` tag — see [#57](https://github.com/thisismyurl/thisismyurl-image-support/issues/57) for what was deferred and why.
+Version 1.6226 is a rebuild. Earlier releases carried a filename cleanup engine, photo credits, WebP generation and a library audit surface. Those are recorded in the issue tracker and preserved in git history at the `pre-mvp-origin` tag. See [#57](https://github.com/thisismyurl/thisismyurl-image-support/issues/57) for what was deferred and why.
 
 ## Versioning
 
-Versions follow `X.Yjjj.hhmm` — release class, last digit of the year, Julian day, and 24-hour build time.
+Versions follow `X.Yjjj.hhmm`: release class, last digit of the year, Julian day, and 24-hour build time.
 
 ## About
 
