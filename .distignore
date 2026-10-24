@@ -21,3 +21,19 @@ tests
 assets/editor
 *.log
 .DS_Store
+
+# Repository surface, not plugin runtime. These say nothing useful sitting in
+# wp-content/plugins and only add weight to the download.
+CODE_OF_CONDUCT.md
+PILLARS.md
+SUPPORT.md
+
+# Belongs to the tooling that runs alongside this repo, never to the plugin.
+audit
+
+# Listing assets for WordPress.org. These belong in SVN /assets, never in the
+# plugin download.
+.wordpress-org
+
+# Built archives and submission paperwork. Never part of the download.
+build

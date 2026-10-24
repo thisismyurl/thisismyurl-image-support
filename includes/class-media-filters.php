@@ -15,9 +15,27 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Adds the alt-state and oversize filters to the Media list screen.
  */
-final class TIMU_Media_Filters {
+final class TIMU_Image_Support_Media_Filters {
 
 	const QUERY_VAR = 'timu_image_filter';
+
+	/**
+	 * Every cache the PHP-side scans keep.
+	 *
+	 * Listed in one place because the alternative was remembering to name each transient
+	 * at each of the several points that can invalidate them, and forgetting one is
+	 * exactly how this screen twice reported a number that was no longer true.
+	 */
+	const SCAN_CACHES = array( 'timu_image_oversized_ids', 'timu_image_broken_ids' );
+
+	/**
+	 * Drop every scan cache.
+	 */
+	public static function flush_scans() {
+		foreach ( self::SCAN_CACHES as $key ) {
+			delete_transient( $key );
+		}
+	}
 
 	/**
 	 * Register hooks.
@@ -34,11 +52,22 @@ final class TIMU_Media_Filters {
 	 */
 	private static function choices() {
 		return array(
-			''             => __( 'All images', 'thisismyurl-image-support' ),
-			'missing-alt'  => __( 'Missing alt text', 'thisismyurl-image-support' ),
-			'has-alt'      => __( 'Has alt text', 'thisismyurl-image-support' ),
-			'oversized'    => __( 'Oversized originals', 'thisismyurl-image-support' ),
-			'heavy'        => __( 'Files over 1 MB', 'thisismyurl-image-support' ),
+			// This dropdown sits beside core's own media-type filter, which covers every
+			// kind of file, so every label here names images explicitly. Otherwise "Files
+			// over 1 MB" reads as though it might turn up a PDF.
+			''            => __( 'All images', 'thisismyurl-image-support' ),
+			'missing-alt' => __( 'Images missing alt text', 'thisismyurl-image-support' ),
+			'has-alt'     => __( 'Images with alt text', 'thisismyurl-image-support' ),
+			'oversized'   => __( 'Oversized originals', 'thisismyurl-image-support' ),
+			'broken'      => __( 'Images with no file', 'thisismyurl-image-support' ),
+
+			// Reads the configured threshold rather than saying "1 MB". Once that number
+			// became a setting, a fixed label was simply untrue for anybody who changed it.
+			'heavy'       => sprintf(
+				/* translators: %s: file size, e.g. "2 MB". */
+				__( 'Images over %s', 'thisismyurl-image-support' ),
+				size_format( TIMU_Image_Support_Facts::heavy_bytes(), 0 )
+			),
 		);
 	}
 
@@ -109,7 +138,7 @@ final class TIMU_Media_Filters {
 
 		// Every filter here is about images, so narrow the type first. Without this,
 		// "missing alt text" would list every PDF on the site.
-		$query->set( 'post_mime_type', TIMU_Image_Facts::supported_mimes() );
+		$query->set( 'post_mime_type', TIMU_Image_Support_Facts::supported_mimes() );
 
 		switch ( $filter ) {
 			case 'missing-alt':
@@ -120,8 +149,15 @@ final class TIMU_Media_Filters {
 					'meta_query',
 					array(
 						'relation' => 'OR',
-						array( 'key' => '_wp_attachment_image_alt', 'compare' => 'NOT EXISTS' ),
-						array( 'key' => '_wp_attachment_image_alt', 'value' => '', 'compare' => '=' ),
+						array(
+							'key'     => '_wp_attachment_image_alt',
+							'compare' => 'NOT EXISTS',
+						),
+						array(
+							'key'     => '_wp_attachment_image_alt',
+							'value'   => '',
+							'compare' => '=',
+						),
 					)
 				);
 				break;
@@ -130,7 +166,11 @@ final class TIMU_Media_Filters {
 				$query->set(
 					'meta_query',
 					array(
-						array( 'key' => '_wp_attachment_image_alt', 'value' => '', 'compare' => '!=' ),
+						array(
+							'key'     => '_wp_attachment_image_alt',
+							'value'   => '',
+							'compare' => '!=',
+						),
 					)
 				);
 				break;
@@ -140,13 +180,18 @@ final class TIMU_Media_Filters {
 					'meta_query',
 					array(
 						array(
-							'key'     => TIMU_Image_Facts::SIZE_META,
-							'value'   => (int) apply_filters( 'timu_image_support_heavy_bytes', MB_IN_BYTES ),
+							'key'     => TIMU_Image_Support_Facts::SIZE_META,
+							'value'   => TIMU_Image_Support_Facts::heavy_bytes(),
 							'compare' => '>=',
 							'type'    => 'NUMERIC',
 						),
 					)
 				);
+				break;
+
+			case 'broken':
+				$ids = self::broken_ids();
+				$query->set( 'post__in', $ids ? $ids : array( 0 ) );
 				break;
 
 			case 'oversized':
@@ -173,7 +218,7 @@ final class TIMU_Media_Filters {
 	 *
 	 * @return int[]
 	 */
-	private static function oversized_ids() {
+	public static function oversized_ids() {
 		$cache_key = 'timu_image_oversized_ids';
 		$cached    = get_transient( $cache_key );
 
@@ -181,25 +226,10 @@ final class TIMU_Media_Filters {
 			return $cached;
 		}
 
-		$cap = (int) apply_filters( 'timu_image_support_oversize_scan_limit', 2000 );
-
-		$candidates = get_posts(
-			array(
-				'post_type'      => 'attachment',
-				'post_status'    => 'inherit',
-				'post_mime_type' => TIMU_Image_Facts::supported_mimes(),
-				'posts_per_page' => $cap,
-				'fields'         => 'ids',
-				'orderby'        => 'ID',
-				'order'          => 'DESC',
-				'no_found_rows'  => true,
-			)
-		);
-
 		$ids = array();
 
-		foreach ( $candidates as $id ) {
-			if ( TIMU_Image_Facts::is_oversized( $id ) ) {
+		foreach ( self::scan_candidates() as $id ) {
+			if ( TIMU_Image_Support_Facts::is_oversized( $id ) ) {
 				$ids[] = (int) $id;
 			}
 		}
@@ -210,6 +240,58 @@ final class TIMU_Media_Filters {
 	}
 
 	/**
+	 * IDs of images whose file is no longer on disk.
+	 *
+	 * Same bounded, cached shape as the oversize scan, and for the same reason: there is no
+	 * SQL answer to "does this file exist", so the candidate set is walked in PHP and the
+	 * result is held for a short window.
+	 *
+	 * @return int[]
+	 */
+	public static function broken_ids() {
+		$cache_key = 'timu_image_broken_ids';
+		$cached    = get_transient( $cache_key );
+
+		if ( is_array( $cached ) ) {
+			return $cached;
+		}
+
+		$ids = array();
+
+		foreach ( self::scan_candidates() as $id ) {
+			if ( TIMU_Image_Support_Facts::file_missing( $id ) ) {
+				$ids[] = (int) $id;
+			}
+		}
+
+		set_transient( $cache_key, $ids, 10 * MINUTE_IN_SECONDS );
+
+		return $ids;
+	}
+
+	/**
+	 * The bounded candidate set both PHP-side scans walk.
+	 *
+	 * @return int[]
+	 */
+	private static function scan_candidates() {
+		$cap = (int) apply_filters( 'timu_image_support_oversize_scan_limit', 2000 );
+
+		return get_posts(
+			array(
+				'post_type'      => 'attachment',
+				'post_status'    => 'inherit',
+				'post_mime_type' => TIMU_Image_Support_Facts::supported_mimes(),
+				'posts_per_page' => $cap,
+				'fields'         => 'ids',
+				'orderby'        => 'ID',
+				'order'          => 'DESC',
+				'no_found_rows'  => true,
+			)
+		);
+	}
+
+	/**
 	 * Drop the oversize cache when an attachment's metadata changes.
 	 *
 	 * @param array $metadata      Attachment metadata.
@@ -217,7 +299,7 @@ final class TIMU_Media_Filters {
 	 * @return array Unmodified metadata.
 	 */
 	public static function flush_oversize_cache( $metadata, $attachment_id ) {
-		delete_transient( 'timu_image_oversized_ids' );
+		self::flush_scans();
 
 		return $metadata;
 	}

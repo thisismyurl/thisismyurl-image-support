@@ -14,7 +14,8 @@ This puts them on the list.
 - **A filter for the images that need work.** Missing alt text, has alt text, oversized originals, or files over a megabyte.
 - **Dimensions and file size, with file size sortable.** The six megabyte photo somebody dropped into a post in 2019 comes straight to the top.
 - **An oversized flag.** WordPress scales big uploads down on arrival, but images that predate that behaviour, or that were imported straight onto disk, escaped it. Those get flagged.
-- **Search that includes alt text.** WordPress searches titles, captions, descriptions and filenames, but not alt text, often the only place the subject of a photograph is written down. Searching "harbour" now finds the harbour photo even when the file is called `IMG_4821.jpg`.
+- **Search that includes alt text.** WordPress searches titles, captions, descriptions and filenames, but not alt text, often the only place the subject of a photograph is written down. In list view, searching "harbour" now finds the harbour photo even when the file is called `IMG_4821.jpg`.
+- **A page that explains itself.** `Media > Image Support` says what the plugin does, reports how many images in your own library need attention, links to each of those sets, and holds the two settings.
 
 ## What it does not do
 
@@ -42,8 +43,9 @@ Five filters and two actions, all documented inline:
 | --- | --- | --- |
 | `timu_image_support_mime_types` | filter | Which image types the plugin operates on |
 | `timu_image_support_widest_width` | filter | The width treated as the largest this site will serve |
-| `timu_image_support_oversize_threshold` | filter | Multiplier past which an image is flagged (default `1.5`) |
-| `timu_image_support_heavy_bytes` | filter | Byte count treated as a heavy file (default 1 MB) |
+| `timu_image_support_oversize_threshold` | filter | Multiplier past which an image is flagged. Overrides the setting |
+| `timu_image_support_heavy_bytes` | filter | Byte count treated as a heavy file. Overrides the setting |
+| `timu_image_support_oversize_scan_limit` | filter | How many images the oversize scan examines (default 2,000) |
 | `timu_image_support_alt_suggestions` | filter | Return suggested alt strings for an attachment |
 | `timu_image_support_before_write` | action | Fires before the plugin modifies an attachment |
 | `timu_image_support_after_write` | action | Fires after, with old and new values |

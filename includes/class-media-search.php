@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Extends the Media list search to include alt text.
  */
-final class TIMU_Media_Search {
+final class TIMU_Image_Support_Media_Search {
 
 	/**
 	 * Register hooks.
@@ -75,8 +75,15 @@ final class TIMU_Media_Search {
 			'_wp_attachment_image_alt'
 		);
 
-		// The join can multiply rows if an attachment somehow carries duplicate alt meta.
-		$clauses['groupby'] = "{$wpdb->posts}.ID";
+		// The join can multiply rows if an attachment somehow carries duplicate alt meta. Added to
+		// any grouping another plugin already put on this query, never put in place of it.
+		$group = "{$wpdb->posts}.ID";
+
+		if ( empty( $clauses['groupby'] ) ) {
+			$clauses['groupby'] = $group;
+		} elseif ( false === strpos( $clauses['groupby'], $group ) ) {
+			$clauses['groupby'] .= ', ' . $group;
+		}
 
 		return $clauses;
 	}
@@ -124,7 +131,7 @@ final class TIMU_Media_Search {
 				continue;
 			}
 
-			$replacement = $needle . $wpdb->prepare( " OR (timu_alt_meta.meta_value LIKE %s)", $like );
+			$replacement = $needle . $wpdb->prepare( ' OR (timu_alt_meta.meta_value LIKE %s)', $like );
 			$search      = str_replace( $needle, $replacement, $search );
 		}
 

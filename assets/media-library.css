@@ -1,10 +1,21 @@
 /**
- * Media list screen additions.
+ * Media list additions, and the Image Support overview screen.
  *
- * Deliberately restrained. This sits inside somebody else's admin table, so it borrows
- * core's own colour variables rather than introducing a palette, and it does not fight
- * the table's own spacing.
+ * Two different jobs, deliberately styled differently.
+ *
+ * On the Media list this sits inside somebody else's table, so it borrows core's own
+ * colours and does not fight the table's spacing.
+ *
+ * The overview screen is our own surface, so it carries a little more of our own
+ * character: a measured page width, sections whose heading sits above the card rather
+ * than inside it, and one navy rule at the top of each figure. Restraint still applies.
+ * A plugin that repaints wp-admin in its own brand is advertising itself to the person
+ * using it rather than helping them.
  */
+
+/* ---------------------------------------------------------------------------
+   1. The Media list screen
+   --------------------------------------------------------------------------- */
 
 .column-timu_alt { width: 22%; }
 .column-timu_dimensions { width: 9em; }
@@ -49,11 +60,7 @@
 	font-style: italic;
 }
 
-.timu-dims {
-	font-variant-numeric: tabular-nums;
-	white-space: nowrap;
-}
-
+.timu-dims,
 .timu-size {
 	font-variant-numeric: tabular-nums;
 	white-space: nowrap;
@@ -64,28 +71,606 @@
 	color: #b32d2e;
 }
 
+/* One pill recipe, defined once and shared by the Media list badge and the overview
+   status pills: a tint background, an accent border, and text dark enough to read on it.
+   These were previously two independent copies of the same idea, which is fine until the
+   day one of them changes. */
+.timu-oversize,
+.timu-status {
+	border-radius: 9px;
+	border: 1px solid;
+	font-size: 11px;
+	white-space: nowrap;
+}
+
 .timu-oversize {
 	display: inline-block;
 	margin-inline-start: 6px;
 	padding: 1px 6px;
-	border-radius: 9px;
-	font-size: 11px;
 	line-height: 1.6;
-	white-space: nowrap;
 	background: #fcf0f1;
 	color: #b32d2e;
-	border: 1px solid #f0b8b9;
+	border-color: #f0b8b9;
 	cursor: help;
+}
+
+/* ---------------------------------------------------------------------------
+   2. The overview screen
+   --------------------------------------------------------------------------- */
+
+/* Two widths, on purpose rather than by accident. The page is wide enough to lay
+   five figures out in a row; running text inside it is held to a reading measure,
+   because a line of prose 1,200px long is unreadable however tidy the grid is. */
+.timu-overview {
+	max-width: 75rem;
+	margin-inline-end: 20px;
+}
+
+.timu-prose,
+.timu-overview .timu-card-lg p,
+.timu-overview .timu-limits {
+	max-width: 44rem;
+}
+
+/* Header ------------------------------------------------------------------ */
+
+.timu-head {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 1.5rem;
+	flex-wrap: wrap;
+	margin: 0.5rem 0 0.25rem;
+}
+
+.timu-overview h1 {
+	margin: 0 0 0.25rem;
+	padding: 0;
+	font-size: 1.55rem;
+	font-weight: 400;
+	line-height: 1.25;
+}
+
+.timu-sub {
+	margin: 0;
+	max-width: 44rem;
+	font-size: 14px;
+	color: #50575e;
+}
+
+.timu-head-action {
+	flex: 0 0 auto;
+	margin-top: 0.35rem;
+}
+
+/* Sections ---------------------------------------------------------------- */
+
+.timu-sec {
+	margin: 2.25rem 0;
+}
+
+/* Heading and its summary sit on the page, not inside the card. That rhythm is
+   what keeps a column of cards from reading as a stack of identical boxes. */
+.timu-sec-head {
+	margin-bottom: 0.75rem;
+}
+
+.timu-sec-head h2 {
+	margin: 0 0 0.15rem;
+	padding: 0;
+	font-size: 1.15rem;
+	font-weight: 600;
+	line-height: 1.3;
+}
+
+.timu-sec-head p {
+	margin: 0;
+	max-width: 44rem;
+	font-size: 13px;
+	color: #646970;
+}
+
+.timu-card-lg {
+	background: #fff;
+	border: 1px solid #e2e4e7;
+	border-radius: 8px;
+	padding: 1.5rem;
+}
+
+.timu-card-lg h3 {
+	font-size: 1rem;
+	margin: 1.5rem 0 0.35rem;
+}
+
+.timu-card-lg p {
+	font-size: 14px;
+}
+
+.timu-card-lg > p:first-child {
+	margin-top: 0;
+}
+
+/* Context, not decoration: used for the caveats somebody needs before acting. */
+.timu-note {
+	border-inline-start: 3px solid #c3c4c7;
+	padding-inline-start: 0.85rem;
+	color: #50575e;
+	font-size: 13px;
+	max-width: 44rem;
+}
+
+/* A zero-oversized library with one orphaned file trips both notes at once, and two
+   left-ruled blocks touching read as "two things are wrong" when only one is urgent. */
+.timu-note + .timu-note {
+	margin-top: 0.85rem;
+}
+
+/* The caveat that has to be read before anything is deleted. */
+.timu-note-lead {
+	border-inline-start-color: #dba617;
+	font-size: 14px;
+}
+
+/* Context for the warning above it, deliberately subordinate to it. */
+.timu-note-quiet {
+	border-inline-start-color: #dcdcde;
+	color: #646970;
+}
+
+.timu-note-wide {
+	max-width: 52rem;
+	margin-bottom: 1.75rem;
+}
+
+.timu-note-flag {
+	border-inline-start-color: #d63638;
+}
+
+/* Figures ----------------------------------------------------------------- */
+
+.timu-cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+	gap: 1rem;
+	margin: 0;
+}
+
+.timu-card {
+	display: flex;
+	flex-direction: column;
+	gap: 0.3rem;
+	padding: 1rem 1.1rem 1.1rem;
+	border: 1px solid #e2e4e7;
+	border-radius: 8px;
+	background: #fff;
+	border-top: 3px solid #c3c4c7;
+}
+
+/* The top rule carries state and nothing else.
+   It was brand navy at rest, which was a mistake: navy sat in the same slot, at the same
+   weight, in the same place in the eye's scan path as the three state colours, so a card
+   with no verdict read as though it had a fourth kind of verdict. Grey says "nothing is
+   being claimed here", which is the truth. The brand mark lives where it competes with
+   nothing: the ring bullets and the column headings in the diagrams. */
+.timu-card.has-settled { border-top-color: #007017; }
+.timu-card.has-look { border-top-color: #dba617; }
+.timu-card.has-attention { border-top-color: #d63638; }
+
+/* Label first, then the number. Site Kit's ordering, and it reads better: you know
+   what you are looking at before you read the figure. */
+/* The slot is reserved whether or not a pill fires. Without this, a card carrying a pill
+   has a taller head row than one without, and in a row of five the numbers stop landing
+   on a shared line. Borrowing the label-above-number order without the fixed slot is what
+   made the figures look nudged out of alignment. */
+.timu-card-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+	order: -1;
+	min-height: 1.65rem;
+}
+
+.timu-card-label {
+	font-weight: 600;
+	font-size: 12px;
+	color: #50575e;
+	text-transform: none;
+}
+
+.timu-card-count {
+	font-size: 2rem;
+	font-weight: 400;
+	line-height: 1.1;
+	font-variant-numeric: tabular-nums;
+	color: #1d2327;
+}
+
+.timu-card-help {
+	font-size: 12px;
+	color: #646970;
+	line-height: 1.45;
+	flex-grow: 1;
+}
+
+.timu-card-link {
+	font-size: 13px;
+	margin-top: 0.35rem;
+	text-decoration: none;
+}
+
+/* Same pill language as .timu-oversize on the Media list: tint, accent border, text
+   dark enough to read. Core's text-safe status colours, not the brighter accents
+   used for notice strips. */
+.timu-status {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 1px 8px 1px 6px;
+	line-height: 1.7;
+}
+
+.timu-status-icon {
+	width: 12px;
+	height: 12px;
+	flex: 0 0 12px;
+}
+
+.timu-status.is-settled {
+	background: #edf6ee;
+	border-color: #a7d3ae;
+	color: #007017;
+}
+
+.timu-status.is-look {
+	background: #fcf9e8;
+	border-color: #e0cc80;
+	color: #996800;
+}
+
+.timu-status.is-attention {
+	background: #fcf0f1;
+	border-color: #f0b8b9;
+	color: #b32d2e;
+}
+
+/* Deliberately outside the green / amber / red ramp. Those three carry a verdict; this
+   one reports a fact, and using a severity colour for it would tell somebody their own
+   setting was a fault. */
+.timu-status.is-noted {
+	background: #f0f0f1;
+	border-color: #c3c4c7;
+	color: #50575e;
+}
+
+/* Diagrams ---------------------------------------------------------------- */
+
+.timu-diagram {
+	display: block;
+	width: 100%;
+	height: auto;
+	max-width: 44rem;
+	margin: 1.25rem 0;
+	border: 1px solid #e2e4e7;
+	border-radius: 6px;
+	background: #fff;
+	padding: 0.5rem;
+	box-sizing: border-box;
+}
+
+/* Inside a settings row the scale is feedback on the field above it, not a figure in its
+   own right, so it sits tighter and does not run wider than the description it explains. */
+.form-table .timu-diagram {
+	margin: 0.75rem 0 0.25rem;
+	max-width: 38rem;
+}
+
+.timu-svg-tick { font: 600 12px sans-serif; fill: #1d2327; }
+.timu-svg-cap { font: 11px sans-serif; fill: #50575e; }
+.timu-svg-flagtick { fill: #b32d2e; }
+
+/* The file-size marker is navy rather than red: crossing this line is a fact about a
+   file, not a fault, and it should not borrow the colour that means "fix this". */
+.timu-svg-weighttick { fill: #123456; }
+
+/* Lists and tables -------------------------------------------------------- */
+
+.timu-limits {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.timu-limits li {
+	position: relative;
+	padding-inline-start: 1.5rem;
+	margin-bottom: 0.6rem;
+	font-size: 14px;
+	line-height: 1.55;
+}
+
+.timu-limits li::before {
+	content: "";
+	position: absolute;
+	inset-inline-start: 0;
+	top: 0.55em;
+	width: 0.6rem;
+	height: 0.6rem;
+	border-radius: 50%;
+	border: 2px solid #123456;
+}
+
+/* Ways to help, numbered. Navy earns its place here because nothing else on the page is
+   competing for the same signal. */
+.timu-ways {
+	counter-reset: timu-way;
+	list-style: none;
+	margin: 1.25rem 0 0;
+	padding: 0;
+	max-width: 44rem;
+}
+
+.timu-way {
+	counter-increment: timu-way;
+	position: relative;
+	padding-inline-start: 2.5rem;
+	margin-bottom: 1.4rem;
+}
+
+.timu-way::before {
+	content: counter(timu-way);
+	position: absolute;
+	inset-inline-start: 0;
+	top: 0.05rem;
+	width: 1.6rem;
+	height: 1.6rem;
+	border-radius: 50%;
+	background: #123456;
+	color: #fff;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 1.6rem;
+	text-align: center;
+}
+
+.timu-way h3 {
+	margin: 0 0 0.2rem;
+	font-size: 0.95rem;
+}
+
+.timu-way p {
+	margin: 0 0 0.4rem;
+	font-size: 14px;
+}
+
+.timu-way-link {
+	font-size: 13px;
+	text-decoration: none;
+}
+
+/* About this image library -------------------------------------------------- */
+
+.timu-about-cards {
+	margin: 1rem 0 1.5rem;
+}
+
+/* Site Kit shows a bare percentage and leaves you to work out whether it is good news.
+   Every number these sit beside is one you want going down, so the colour follows the
+   meaning rather than the sign. */
+.timu-delta {
+	font-size: 11px;
+	line-height: 1.7;
+	white-space: nowrap;
+	padding: 1px 8px;
+	border-radius: 9px;
+	border: 1px solid;
+}
+
+.timu-delta.is-better {
+	background: #edf6ee;
+	border-color: #a7d3ae;
+	color: #007017;
+}
+
+.timu-delta.is-worse {
+	background: #fcf0f1;
+	border-color: #f0b8b9;
+	color: #b32d2e;
+}
+
+.timu-delta.is-flat {
+	background: #f0f0f1;
+	border-color: #c3c4c7;
+	color: #50575e;
+}
+
+/* One number over time. Points are evenly spaced rather than spaced by date, because the
+   readings are irregular by design and a date axis would imply a continuous record. */
+.timu-spark {
+	display: block;
+	width: 100%;
+	max-width: 40rem;
+	height: 5.5rem;
+	margin: 0.75rem 0 0.25rem;
+	padding: 0.5rem;
+	box-sizing: border-box;
+	border: 1px solid #e2e4e7;
+	border-radius: 6px;
+	background: #fff;
+	color: #123456;
+}
+
+.timu-spark.is-better { color: #007017; }
+.timu-spark.is-worse { color: #b32d2e; }
+
+.timu-spark-cap {
+	margin: 0 0 1rem;
+	font-size: 12px;
+	color: #646970;
+}
+
+/* Folders open to show what is in them. A disclosure rather than a second table, so the
+   list stays where the count is. */
+.timu-folder summary {
+	cursor: pointer;
+}
+
+.timu-folder-files {
+	margin: 0.5rem 0 0.25rem;
+	padding-inline-start: 1.2rem;
+	max-height: 14rem;
+	overflow-y: auto;
+	font-size: 12px;
+}
+
+.timu-folder-files li {
+	margin-bottom: 0.15rem;
+	word-break: break-all;
+}
+
+.timu-folder-more {
+	margin: 0.25rem 0 0.5rem;
+	font-size: 12px;
+	color: #646970;
+	font-style: italic;
+}
+
+.timu-export {
+	display: flex;
+	align-items: flex-end;
+	gap: 0.75rem;
+	flex-wrap: wrap;
+	margin: 0.75rem 0 0.5rem;
+}
+
+.timu-export-field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.15rem;
+	font-size: 12px;
+	color: #50575e;
+}
+
+/* Where images are used ---------------------------------------------------- */
+
+.timu-tabs {
+	margin: 1.5rem 0 0;
+}
+
+.timu-ref-views {
+	margin: 1rem 0 0.5rem;
+	font-size: 13px;
+}
+
+.timu-ref-when {
+	margin-inline-start: 0.5rem;
+	font-size: 12px;
+	color: #646970;
+}
+
+.timu-refs {
+	margin-top: 0.5rem;
+	border-radius: 6px;
+}
+
+.timu-refs th,
+.timu-refs td {
+	vertical-align: middle;
+}
+
+.timu-ref-thumb {
+	width: 56px;
+}
+
+.timu-ref-thumb img {
+	display: block;
+	width: 40px;
+	height: 40px;
+	object-fit: cover;
+	border-radius: 3px;
+	background: #f0f0f1;
+}
+
+/* A file that is gone gets a placeholder rather than a broken-image icon, which reads as
+   the page failing rather than as a fact about the image. */
+.timu-ref-gone {
+	display: block;
+	width: 40px;
+	height: 40px;
+	line-height: 40px;
+	text-align: center;
+	border-radius: 3px;
+	background: #fcf0f1;
+	color: #b32d2e;
+}
+
+/* Same pill language as everywhere else on this plugin's surfaces. */
+.timu-ref-tag {
+	display: inline-block;
+	margin: 1px 4px 1px 0;
+	padding: 1px 8px;
+	border-radius: 9px;
+	font-size: 11px;
+	line-height: 1.7;
+	background: #f0f6fb;
+	border: 1px solid #b8d4ea;
+	color: #123456;
+}
+
+/* Said once at the head of the run, not on every row. Italic grey is WordPress's own
+   signal for "secondary, skip this", and it was carrying the single most consequential
+   fact on the screen, so the typography argued against the meaning. */
+.timu-ref-group th {
+	background: #f6f7f7;
+	border-top: 1px solid #dcdcde;
+	border-bottom: 1px solid #dcdcde;
+	padding: 0.6rem 0.75rem;
+	text-align: start;
+	font-weight: 400;
+}
+
+.timu-ref-group.is-none th {
+	background: #fcf9e8;
+	border-top-color: #e0cc80;
+	border-bottom-color: #e0cc80;
+}
+
+.timu-ref-group-label {
+	font-weight: 600;
+	font-size: 13px;
+	color: #1d2327;
+}
+
+.timu-ref-group-note {
+	font-size: 12px;
+	color: #50575e;
+	margin-inline-start: 0.4rem;
+}
+
+.timu-ref-nav {
+	margin-top: 0.5rem;
+}
+
+.timu-hooks {
+	margin-top: 0.25rem;
+	border-radius: 6px;
+}
+
+.timu-hooks code {
+	font-size: 12px;
+	white-space: normal;
+	word-break: break-word;
+}
+
+.timu-hooks td:last-child {
+	font-size: 13px;
+	line-height: 1.5;
 }
 
 @media screen and (max-width: 782px) {
 	.timu-alt-cell { flex-wrap: nowrap; }
 	.timu-alt-state { flex-basis: auto; }
-}
-
-@media (prefers-color-scheme: dark) {
-	.timu-alt-cell.is-empty .timu-alt-input,
-	.timu-oversize {
-		background-color: transparent;
-	}
+	.timu-card-lg { padding: 1rem; }
+	.timu-head-action { margin-top: 0; }
 }

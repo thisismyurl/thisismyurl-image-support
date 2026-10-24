@@ -10,12 +10,12 @@ Thumbs.db
 *.log
 debug.log
 
-# Node build tooling (devDependencies only; the compiled bundle in
-# assets/build/ IS committed and ships with the plugin — do NOT ignore it).
+# Node tooling. Nothing here is compiled any more; the JSX bundle that used to live
+# in assets/build/ went with the rest of the old toolchain.
 node_modules/
 npm-debug.log*
 
-# Composer dev-only artifacts inside vendor/ — keep runtime deps tracked.
+# Composer dev-only artifacts inside vendor/ , keep runtime deps tracked.
 vendor/bin/
 vendor/squizlabs/
 vendor/wp-coding-standards/
@@ -28,3 +28,9 @@ vendor/dealerdirect/
 .phpunit.result.cache
 phpunit.html
 build/coverage
+
+# Audit logs written by tooling run from inside this directory.
+audit/
+
+# Submission archives built from this source.
+build/

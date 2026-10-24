@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Adds and renders this plugin's Media list columns.
  */
-final class TIMU_Media_Columns {
+final class TIMU_Image_Support_Media_Columns {
 
 	const COL_ALT  = 'timu_alt';
 	const COL_DIMS = 'timu_dimensions';
@@ -79,7 +79,7 @@ final class TIMU_Media_Columns {
 
 		// Non-images get an em dash rather than a misleading blank, so the row still
 		// reads as "this column does not apply" instead of "this value is missing".
-		if ( ! TIMU_Image_Facts::is_supported_image( $attachment_id ) ) {
+		if ( ! TIMU_Image_Support_Facts::is_supported_image( $attachment_id ) ) {
 			echo '<span aria-hidden="true">&#8212;</span><span class="screen-reader-text">'
 				. esc_html__( 'Not an image', 'thisismyurl-image-support' ) . '</span>';
 			return;
@@ -104,7 +104,7 @@ final class TIMU_Media_Columns {
 	 * @param int $attachment_id Attachment ID.
 	 */
 	private static function render_alt( $attachment_id ) {
-		$alt      = TIMU_Image_Facts::stored_alt( $attachment_id );
+		$alt      = TIMU_Image_Support_Facts::stored_alt( $attachment_id );
 		$editable = current_user_can( 'edit_post', $attachment_id );
 
 		if ( ! $editable ) {
@@ -138,7 +138,7 @@ final class TIMU_Media_Columns {
 	 * @param int $attachment_id Attachment ID.
 	 */
 	private static function render_dimensions( $attachment_id ) {
-		$dims = TIMU_Image_Facts::dimensions( $attachment_id );
+		$dims = TIMU_Image_Support_Facts::dimensions( $attachment_id );
 
 		if ( $dims['width'] <= 0 || $dims['height'] <= 0 ) {
 			echo '<span aria-hidden="true">&#8212;</span><span class="screen-reader-text">'
@@ -151,19 +151,19 @@ final class TIMU_Media_Columns {
 			esc_html( sprintf( '%d &times; %d', $dims['width'], $dims['height'] ) )
 		);
 
-		if ( ! TIMU_Image_Facts::is_oversized( $attachment_id ) ) {
+		if ( ! TIMU_Image_Support_Facts::is_oversized( $attachment_id ) ) {
 			return;
 		}
 
-		$factor = TIMU_Image_Facts::oversize_factor( $attachment_id );
-		$widest = TIMU_Image_Facts::widest_served_width();
+		$factor = TIMU_Image_Support_Facts::oversize_factor( $attachment_id );
+		$widest = TIMU_Image_Support_Facts::widest_served_width();
 
 		printf(
 			'<span class="timu-oversize" title="%s">%s</span>',
 			esc_attr(
 				sprintf(
-					/* translators: 1: multiplier, 2: widest registered image width in pixels. */
-					__( 'This image is %1$s times wider than the largest size this site ever serves (%2$dpx). It escaped the scaling WordPress normally applies on upload, so the extra pixels sit in your uploads folder and in every backup.', 'thisismyurl-image-support' ),
+					/* translators: 1: multiplier, 2: widest served image width in pixels. */
+					__( 'This image is %1$s times wider than the largest size your site shows a visitor (%2$dpx). Those extra pixels are never used, but they sit in your uploads folder and in every backup you take.', 'thisismyurl-image-support' ),
 					number_format_i18n( $factor, 1 ),
 					$widest
 				)
@@ -178,7 +178,7 @@ final class TIMU_Media_Columns {
 	 * @param int $attachment_id Attachment ID.
 	 */
 	private static function render_filesize( $attachment_id ) {
-		$bytes = TIMU_Image_Facts::filesize( $attachment_id );
+		$bytes = TIMU_Image_Support_Facts::filesize( $attachment_id );
 
 		if ( $bytes <= 0 ) {
 			echo '<span aria-hidden="true">&#8212;</span><span class="screen-reader-text">'
@@ -186,8 +186,9 @@ final class TIMU_Media_Columns {
 			return;
 		}
 
-		// A megabyte of image is worth noticing on a page that has several of them.
-		$heavy = $bytes >= (int) apply_filters( 'timu_image_support_heavy_bytes', MB_IN_BYTES );
+		// "Large" is configured in one place so the highlight here and the large-files
+		// filter always agree about what the word means.
+		$heavy = $bytes >= TIMU_Image_Support_Facts::heavy_bytes();
 
 		printf(
 			'<span class="timu-size%s">%s</span>',
@@ -217,7 +218,7 @@ final class TIMU_Media_Columns {
 	/**
 	 * Apply sorting for our columns.
 	 *
-	 * File size sorts on the numeric index maintained by TIMU_Image_Facts. Attachments
+	 * File size sorts on the numeric index maintained by TIMU_Image_Support_Facts. Attachments
 	 * with no index yet are included via the LEFT JOIN that `meta_query` builds, so a
 	 * partially backfilled library still sorts sensibly rather than losing rows.
 	 *
@@ -241,12 +242,18 @@ final class TIMU_Media_Columns {
 				'meta_query',
 				array(
 					'relation' => 'OR',
-					array( 'key' => TIMU_Image_Facts::SIZE_META, 'compare' => 'EXISTS' ),
-					array( 'key' => TIMU_Image_Facts::SIZE_META, 'compare' => 'NOT EXISTS' ),
+					array(
+						'key'     => TIMU_Image_Support_Facts::SIZE_META,
+						'compare' => 'EXISTS',
+					),
+					array(
+						'key'     => TIMU_Image_Support_Facts::SIZE_META,
+						'compare' => 'NOT EXISTS',
+					),
 				)
 			);
 			$query->set( 'orderby', 'meta_value_num' );
-			$query->set( 'meta_key', TIMU_Image_Facts::SIZE_META );
+			$query->set( 'meta_key', TIMU_Image_Support_Facts::SIZE_META );
 			return;
 		}
 
@@ -257,8 +264,14 @@ final class TIMU_Media_Columns {
 				'meta_query',
 				array(
 					'relation' => 'OR',
-					array( 'key' => '_wp_attachment_image_alt', 'compare' => 'EXISTS' ),
-					array( 'key' => '_wp_attachment_image_alt', 'compare' => 'NOT EXISTS' ),
+					array(
+						'key'     => '_wp_attachment_image_alt',
+						'compare' => 'EXISTS',
+					),
+					array(
+						'key'     => '_wp_attachment_image_alt',
+						'compare' => 'NOT EXISTS',
+					),
 				)
 			);
 			$query->set( 'orderby', 'meta_value' );

@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * AJAX endpoint for inline alt text editing.
  */
-final class TIMU_Alt_Editor {
+final class TIMU_Image_Support_Alt_Editor {
 
 	const ACTION = 'timu_image_save_alt';
 	const NONCE  = 'timu_image_save_alt';
@@ -56,7 +56,7 @@ final class TIMU_Alt_Editor {
 		// capped so a paste accident cannot write an unbounded value into postmeta.
 		$alt = trim( mb_substr( $alt, 0, 1000 ) );
 
-		$previous = TIMU_Image_Facts::stored_alt( $attachment_id );
+		$previous = TIMU_Image_Support_Facts::stored_alt( $attachment_id );
 
 		if ( $previous === $alt ) {
 			wp_send_json_success(
@@ -68,10 +68,13 @@ final class TIMU_Alt_Editor {
 			);
 		}
 
-		TIMU_Image_Facts::before_write(
+		TIMU_Image_Support_Facts::before_write(
 			$attachment_id,
 			'alt-text',
-			array( 'previous' => $previous, 'next' => $alt )
+			array(
+				'previous' => $previous,
+				'next'     => $alt,
+			)
 		);
 
 		// Stored either way, including when empty, because that is what core does when an
@@ -80,10 +83,13 @@ final class TIMU_Alt_Editor {
 		// in, so this plugin does not pretend to tell "decorative" from "not done yet".
 		update_post_meta( $attachment_id, '_wp_attachment_image_alt', $alt );
 
-		TIMU_Image_Facts::after_write(
+		TIMU_Image_Support_Facts::after_write(
 			$attachment_id,
 			'alt-text',
-			array( 'previous' => $previous, 'next' => $alt )
+			array(
+				'previous' => $previous,
+				'next'     => $alt,
+			)
 		);
 
 		wp_send_json_success(

@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Read-only facts about image attachments.
  */
-final class TIMU_Image_Facts {
+final class TIMU_Image_Support_Facts {
 
 	/**
 	 * Denormalised file size, in bytes.
@@ -28,6 +28,31 @@ final class TIMU_Image_Facts {
 	 * sort index and nothing more.
 	 */
 	const SIZE_META = '_timu_image_filesize';
+
+	/**
+	 * Option holding the oversize multiplier.
+	 */
+	const OPTION_OVERSIZE = 'timu_image_support_oversize_threshold';
+
+	/**
+	 * Option holding the large-file threshold, in megabytes.
+	 */
+	const OPTION_HEAVY_MB = 'timu_image_support_heavy_mb';
+
+	/**
+	 * Default oversize multiplier.
+	 *
+	 * 1.5, from measurement rather than instinct. A modern upload lands at 2560px against
+	 * a 2048px yardstick, a ratio of 1.25, so anything at or below 1.5 would flag ordinary
+	 * healthy images. Above it you are looking at a file that escaped core's upload
+	 * scaling, which is the case actually worth surfacing.
+	 */
+	const DEFAULT_OVERSIZE = 1.5;
+
+	/**
+	 * Default large-file threshold, in megabytes.
+	 */
+	const DEFAULT_HEAVY_MB = 1.0;
 
 	/**
 	 * MIME types this plugin considers its business.
@@ -125,6 +150,55 @@ final class TIMU_Image_Facts {
 	}
 
 	/**
+	 * Make sure enough of the file-size index exists for a count to be true.
+	 *
+	 * The index fills in as images are looked at, which is fine for sorting a list you are
+	 * already reading. It is not fine for counting. On a fresh install nothing has been
+	 * looked at yet, so a count against the index returned zero large files on a library
+	 * that had five, and reported it with a green "nothing over your size" beside it. A
+	 * confident wrong answer is worse than a slow one.
+	 *
+	 * Bounded like every other walk here, and cheap once it has run: the query returns
+	 * nothing to do on every load after the first.
+	 *
+	 * @return bool Whether the index is now complete.
+	 */
+	public static function ensure_size_index() {
+		/**
+		 * Filter how many images one backfill pass will measure.
+		 *
+		 * @param int $limit Image count.
+		 */
+		$limit = (int) apply_filters( 'timu_image_support_index_backfill_limit', 2000 );
+
+		$missing = get_posts(
+			array(
+				'post_type'      => 'attachment',
+				'post_status'    => 'inherit',
+				'post_mime_type' => self::supported_mimes(),
+				'posts_per_page' => $limit + 1,
+				'fields'         => 'ids',
+				'no_found_rows'  => true,
+				'meta_query'     => array(
+					array(
+						'key'     => self::SIZE_META,
+						'compare' => 'NOT EXISTS',
+					),
+				),
+			)
+		);
+
+		$complete = count( $missing ) <= $limit;
+
+		foreach ( array_slice( $missing, 0, $limit ) as $id ) {
+			// Reading the size is what writes the index entry.
+			self::filesize( $id );
+		}
+
+		return $complete;
+	}
+
+	/**
 	 * The widest image this site will ever actually serve to a visitor.
 	 *
 	 * This is the yardstick for "too big", and getting it right took a correction worth
@@ -200,20 +274,59 @@ final class TIMU_Image_Facts {
 	/**
 	 * The multiplier past which an image is worth flagging.
 	 *
-	 * Calibrated at 1.5, from measurement rather than instinct. A modern upload lands at
-	 * 2560px against a 2048px yardstick, a ratio of 1.25, so anything at or below 1.5
-	 * would flag ordinary healthy images. Above it you are looking at a file that
-	 * escaped core's upload scaling, which is the case actually worth surfacing.
+	 * The stored setting supplies the value and the filter can still override it, in that
+	 * order, so a site configured in code keeps behaving that way even after somebody opens
+	 * the settings screen and saves it.
 	 *
 	 * @return float
 	 */
 	public static function oversize_threshold() {
+		$stored = (float) get_option( self::OPTION_OVERSIZE, self::DEFAULT_OVERSIZE );
+
+		if ( $stored <= 0 ) {
+			$stored = self::DEFAULT_OVERSIZE;
+		}
+
 		/**
 		 * Filter the oversize flag threshold.
 		 *
 		 * @param float $threshold Multiplier of the widest registered image size.
 		 */
-		return (float) apply_filters( 'timu_image_support_oversize_threshold', 1.5 );
+		return (float) apply_filters( 'timu_image_support_oversize_threshold', $stored );
+	}
+
+	/**
+	 * The large-file threshold, in megabytes, as configured.
+	 *
+	 * @return float
+	 */
+	public static function heavy_mb() {
+		$stored = (float) get_option( self::OPTION_HEAVY_MB, self::DEFAULT_HEAVY_MB );
+
+		if ( $stored <= 0 ) {
+			$stored = self::DEFAULT_HEAVY_MB;
+		}
+
+		return $stored;
+	}
+
+	/**
+	 * The large-file threshold in bytes.
+	 *
+	 * Both the file size column and the large-files filter read this, so "large" means one
+	 * thing across the plugin rather than being spelled out separately in each place.
+	 *
+	 * @return int
+	 */
+	public static function heavy_bytes() {
+		$bytes = (int) round( self::heavy_mb() * MB_IN_BYTES );
+
+		/**
+		 * Filter the byte count at which a file is treated as large.
+		 *
+		 * @param int $bytes Threshold in bytes.
+		 */
+		return (int) apply_filters( 'timu_image_support_heavy_bytes', $bytes );
 	}
 
 	/**
@@ -226,6 +339,28 @@ final class TIMU_Image_Facts {
 		$factor = self::oversize_factor( $attachment_id );
 
 		return $factor > 0.0 && $factor >= self::oversize_threshold();
+	}
+
+	/**
+	 * Whether the file behind an attachment has gone missing.
+	 *
+	 * A row can outlive its file: an image is replaced and the old row is left behind, a
+	 * cleanup removes files without removing attachments, a migration copies the database
+	 * but not the uploads folder. WordPress keeps reporting the attachment as though it
+	 * were there, with dimensions and a file size read from metadata that describes
+	 * something no longer on disk.
+	 *
+	 * This matters beyond tidiness. An attachment with no file still counts as an image
+	 * with no alt text, so it turns up as work to do, and nobody can describe a photograph
+	 * that is not there.
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return bool
+	 */
+	public static function file_missing( $attachment_id ) {
+		$path = get_attached_file( $attachment_id );
+
+		return ! $path || ! file_exists( $path );
 	}
 
 	/**
@@ -303,6 +438,11 @@ final class TIMU_Image_Facts {
 	 * @return array Unmodified metadata.
 	 */
 	public static function sync_size_index( $metadata, $attachment_id ) {
+		// Documents, audio and video are not this plugin's business, and get no index entry.
+		if ( 0 !== strpos( (string) get_post_mime_type( (int) $attachment_id ), 'image/' ) ) {
+			return $metadata;
+		}
+
 		if ( isset( $metadata['filesize'] ) && (int) $metadata['filesize'] > 0 ) {
 			update_post_meta( (int) $attachment_id, self::SIZE_META, (int) $metadata['filesize'] );
 		} else {
