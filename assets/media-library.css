@@ -17,9 +17,34 @@
    1. The Media list screen
    --------------------------------------------------------------------------- */
 
-.column-timu_alt { width: 22%; }
-.column-timu_dimensions { width: 9em; }
-.column-timu_filesize { width: 7em; }
+/* Column sizing. WordPress lists use a fixed table layout and give the Uploaded to, Author and Date
+   columns percentage widths of their own; with three more columns added here the File column was left
+   with whatever remained, which at laptop widths was a hundred pixels or less, and a filename wrapped
+   one letter per line. Switch to automatic layout on the desktop list, give the File and Alt text
+   columns room to breathe, and let the narrow columns shrink to their content. */
+@media (min-width: 783px) {
+	.wp-list-table.media { table-layout: auto; }
+	.wp-list-table.media .column-title { min-width: 14em; width: 30%; }
+	.wp-list-table.media .column-timu_alt { min-width: 13em; width: 22%; }
+	.wp-list-table.media .column-timu_dimensions,
+	.wp-list-table.media .column-timu_filesize { width: 1%; white-space: nowrap; }
+	.wp-list-table.media .column-author,
+	.wp-list-table.media .column-parent,
+	.wp-list-table.media .column-date { width: 1%; }
+}
+
+/* On a narrow desktop window the secondary core columns give way (they can be switched back on in Screen Options). */
+@media (min-width: 783px) and (max-width: 1100px) {
+	.wp-list-table.media .column-author,
+	.wp-list-table.media .column-parent,
+	.wp-list-table.media .column-comments { display: none; }
+}
+
+@media (min-width: 783px) and (max-width: 900px) {
+	.wp-list-table.media .column-date { display: none; }
+	.wp-list-table.media .column-title { min-width: 11em; }
+	.wp-list-table.media .column-timu_alt { min-width: 10em; }
+}
 
 .timu-alt-cell {
 	display: flex;

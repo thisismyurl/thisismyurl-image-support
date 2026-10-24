@@ -4,6 +4,11 @@ All notable changes to **Christopher Ross - Image Support** are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses the `x.Yddd` versioning scheme: `x` = release class (0 = pre-release, 1 = full), `Y` = last digit of year, `ddd` = Julian day.
 
+## 1.6297 (2026-10-24)
+
+### Fixed
+- The Media list squeezed the File column to a sliver at laptop widths (about 110px at 1400px wide, with filenames wrapping one letter per line and rows over 500px tall). WordPress's fixed table layout gave the Alt text, Dimensions and File size columns, plus core's Uploaded to, Author and Date columns, their widths first and the File column got the remainder. The desktop list now uses automatic layout with a minimum width for File and Alt text, and below 1100px the Author, Uploaded to and Comments columns (and Date below 900px) step aside; Screen Options turns them back on.
+
 ## 1.6291 (2026-10-18)
 
 ### Fixed

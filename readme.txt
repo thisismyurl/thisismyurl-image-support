@@ -5,7 +5,7 @@ Tags: alt text, accessibility, media library, images, audit
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.6291
+Stable tag: 1.6297
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -153,6 +153,11 @@ Only if your role lets you edit that attachment. The check is per image, not a b
 
 == Changelog ==
 
+= 1.6297 =
+The Media list was hard to read on laptop-width screens: the File column was squeezed to a sliver and filenames wrapped one letter per line. That is fixed.
+
+* Fixed: the File column on the Media list is no longer squeezed by the added Alt text, Dimensions and File size columns. The list now sizes its columns to their content, and on narrower desktop windows the Author, Uploaded to, Comments and Date columns step aside (Screen Options turns them back on).
+
 = 1.6291 =
 A review of 1.6229 turned up problems in how the scans behave on large and unusual sites, and in what this page said about itself. All of them are fixed.
 
@@ -184,6 +189,9 @@ A review of 1.6229 turned up problems in how the scans behave on large and unusu
 * First release of the Media list screen tools: alt text column with inline editing, dimensions and file size columns, a filter for images needing attention, an oversized-image flag, and alt text included in Media search.
 
 == Upgrade Notice ==
+
+= 1.6297 =
+Fixes the File column being squeezed on the Media list at laptop widths. Recommended.
 
 = 1.6291 =
 Fixes the Image Support page failing on sites with unreadable upload folders, limits what Authors can see, and makes the scans safe on large libraries. Recommended.

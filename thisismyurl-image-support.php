@@ -3,7 +3,7 @@
  * Plugin Name:       Thisismyurl Image Support
  * Plugin URI:        https://thisismyurl.com/downloads/thisismyurl-image-support/
  * Description:       See what is in your image library: missing alt text, oversized or broken images, and files nothing refers to. Edit alt text in place.
- * Version:           1.6291
+ * Version:           1.6297
  * Requires at least: 6.4
  * Requires PHP:      7.4
  * Author:            Christopher Ross
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 if ( ! defined( 'TIMU_IMAGE_SUPPORT_VERSION' ) ) {
-	define( 'TIMU_IMAGE_SUPPORT_VERSION', '1.6291' );
+	define( 'TIMU_IMAGE_SUPPORT_VERSION', '1.6297' );
 }
 
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-image-facts.php';
