@@ -49,8 +49,8 @@ final class TIMU_Image_Support_Media_Columns {
 			$new[ $key ] = $label;
 
 			if ( 'title' === $key ) {
-				$new[ self::COL_ALT ]  = __( 'Alt text', 'thisismyurl-image-support' );
-				$new[ self::COL_DIMS ] = __( 'Dimensions', 'thisismyurl-image-support' );
+				$new[ self::COL_ALT ]  = __( 'Description', 'thisismyurl-image-support' );
+				$new[ self::COL_DIMS ] = __( 'Width and height', 'thisismyurl-image-support' );
 				$new[ self::COL_SIZE ] = __( 'File size', 'thisismyurl-image-support' );
 			}
 		}
@@ -58,8 +58,8 @@ final class TIMU_Image_Support_Media_Columns {
 		// If core ever renames the title column, still show ours rather than silently
 		// dropping them.
 		if ( ! isset( $new[ self::COL_ALT ] ) ) {
-			$new[ self::COL_ALT ]  = __( 'Alt text', 'thisismyurl-image-support' );
-			$new[ self::COL_DIMS ] = __( 'Dimensions', 'thisismyurl-image-support' );
+			$new[ self::COL_ALT ]  = __( 'Description', 'thisismyurl-image-support' );
+			$new[ self::COL_DIMS ] = __( 'Width and height', 'thisismyurl-image-support' );
 			$new[ self::COL_SIZE ] = __( 'File size', 'thisismyurl-image-support' );
 		}
 
@@ -81,7 +81,7 @@ final class TIMU_Image_Support_Media_Columns {
 		// reads as "this column does not apply" instead of "this value is missing".
 		if ( ! TIMU_Image_Support_Facts::is_supported_image( $attachment_id ) ) {
 			echo '<span aria-hidden="true">&#8212;</span><span class="screen-reader-text">'
-				. esc_html__( 'Not an image', 'thisismyurl-image-support' ) . '</span>';
+				. esc_html__( 'Not a picture', 'thisismyurl-image-support' ) . '</span>';
 			return;
 		}
 
@@ -109,7 +109,7 @@ final class TIMU_Image_Support_Media_Columns {
 
 		if ( ! $editable ) {
 			if ( '' === $alt ) {
-				echo '<span class="timu-alt-missing">' . esc_html__( 'Missing', 'thisismyurl-image-support' ) . '</span>';
+				echo '<span class="timu-alt-missing">' . esc_html__( 'No description yet', 'thisismyurl-image-support' ) . '</span>';
 			} else {
 				echo esc_html( $alt );
 			}
@@ -125,9 +125,9 @@ final class TIMU_Image_Support_Media_Columns {
 			</div>',
 			(int) $attachment_id,
 			/* translators: %s: image file name. */
-			esc_attr( sprintf( __( 'Alt text for %s', 'thisismyurl-image-support' ), get_the_title( $attachment_id ) ) ),
+			esc_attr( sprintf( __( 'Description for %s', 'thisismyurl-image-support' ), get_the_title( $attachment_id ) ) ),
 			esc_attr( $alt ),
-			esc_attr__( 'Describe this image', 'thisismyurl-image-support' ),
+			esc_attr__( 'Type a short description', 'thisismyurl-image-support' ),
 			esc_html__( 'Save', 'thisismyurl-image-support' )
 		);
 	}
@@ -163,12 +163,12 @@ final class TIMU_Image_Support_Media_Columns {
 			esc_attr(
 				sprintf(
 					/* translators: 1: multiplier, 2: widest served image width in pixels. */
-					__( 'This image is %1$s times wider than the largest size your site shows a visitor (%2$dpx). Those extra pixels are never used, but they sit in your uploads folder and in every backup you take.', 'thisismyurl-image-support' ),
+					__( 'This picture is %1$s times wider than the biggest picture your site shows (%2$dpx). The extra detail is never used, but it takes up space and makes every backup bigger.', 'thisismyurl-image-support' ),
 					number_format_i18n( $factor, 1 ),
 					$widest
 				)
 			),
-			esc_html__( 'Oversized', 'thisismyurl-image-support' )
+			esc_html__( 'Too big', 'thisismyurl-image-support' )
 		);
 	}
 

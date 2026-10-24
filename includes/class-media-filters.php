@@ -55,17 +55,17 @@ final class TIMU_Image_Support_Media_Filters {
 			// This dropdown sits beside core's own media-type filter, which covers every
 			// kind of file, so every label here names images explicitly. Otherwise "Files
 			// over 1 MB" reads as though it might turn up a PDF.
-			''            => __( 'All images', 'thisismyurl-image-support' ),
-			'missing-alt' => __( 'Images missing alt text', 'thisismyurl-image-support' ),
-			'has-alt'     => __( 'Images with alt text', 'thisismyurl-image-support' ),
-			'oversized'   => __( 'Oversized originals', 'thisismyurl-image-support' ),
-			'broken'      => __( 'Images with no file', 'thisismyurl-image-support' ),
+			''            => __( 'All pictures', 'thisismyurl-image-support' ),
+			'missing-alt' => __( 'Pictures with no description', 'thisismyurl-image-support' ),
+			'has-alt'     => __( 'Pictures with a description', 'thisismyurl-image-support' ),
+			'oversized'   => __( 'Pictures much bigger than needed', 'thisismyurl-image-support' ),
+			'broken'      => __( 'Pictures with a missing file', 'thisismyurl-image-support' ),
 
 			// Reads the configured threshold rather than saying "1 MB". Once that number
 			// became a setting, a fixed label was simply untrue for anybody who changed it.
 			'heavy'       => sprintf(
 				/* translators: %s: file size, e.g. "2 MB". */
-				__( 'Images over %s', 'thisismyurl-image-support' ),
+				__( 'Pictures over %s', 'thisismyurl-image-support' ),
 				size_format( TIMU_Image_Support_Facts::heavy_bytes(), 0 )
 			),
 		);
@@ -98,7 +98,7 @@ final class TIMU_Image_Support_Media_Filters {
 		}
 
 		echo '<label class="screen-reader-text" for="' . esc_attr( self::QUERY_VAR ) . '">'
-			. esc_html__( 'Filter images', 'thisismyurl-image-support' ) . '</label>';
+			. esc_html__( 'Filter pictures', 'thisismyurl-image-support' ) . '</label>';
 		echo '<select name="' . esc_attr( self::QUERY_VAR ) . '" id="' . esc_attr( self::QUERY_VAR ) . '">';
 
 		foreach ( $choices as $value => $label ) {

@@ -352,7 +352,7 @@ final class TIMU_Image_Support_Admin_Page {
 	 */
 	public static function render() {
 		if ( ! current_user_can( 'upload_files' ) ) {
-			wp_die( esc_html__( 'You are not allowed to view this page.', 'thisismyurl-image-support' ) );
+			wp_die( esc_html__( 'Sorry, you are not allowed to see this page. Please ask the person who looks after your website.', 'thisismyurl-image-support' ) );
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only view switch, validated below.
@@ -403,21 +403,21 @@ final class TIMU_Image_Support_Admin_Page {
 		printf( '<h1>%s</h1>', esc_html__( 'Image Support', 'thisismyurl-image-support' ) );
 		printf(
 			'<p class="timu-sub">%s</p>',
-			esc_html__( 'A clear look at what is in your image library: what is undescribed, oversized, broken, or referenced nowhere. This reports what it finds. The only content it changes is alt text you type yourself.', 'thisismyurl-image-support' )
+			esc_html__( 'This page looks at the pictures on your website and tells you what it finds. It only looks. It never changes, moves or deletes your pictures. The one thing it can change is a picture description, and only when you type one yourself.', 'thisismyurl-image-support' )
 		);
 		echo '</div>';
 
 		printf(
 			'<a class="button button-primary timu-head-action" href="%s">%s</a>',
 			esc_url( self::list_url() ),
-			esc_html__( 'Open your images', 'thisismyurl-image-support' )
+			esc_html__( 'Open your pictures', 'thisismyurl-image-support' )
 		);
 
 		echo '</div>';
 
-		echo '<p class="timu-note timu-note-wide"><strong>' . esc_html__( 'It has to be list view.', 'thisismyurl-image-support' )
+		echo '<p class="timu-note timu-note-wide"><strong>' . esc_html__( 'Switch to the list view first.', 'thisismyurl-image-support' )
 			. '</strong> ' . esc_html__(
-				'WordPress shows your media as a grid by default, and a grid has no columns, so none of this appears there. The button above switches you across and WordPress remembers the choice.',
+				'To begin with, WordPress shows your pictures as a grid of small squares, and a grid has no room for the extra details this tool adds. The button above switches you to the list view, and WordPress remembers your choice.',
 				'thisismyurl-image-support'
 			) . '</p>';
 	}
@@ -443,7 +443,7 @@ final class TIMU_Image_Support_Admin_Page {
 	private static function render_tabs( $current ) {
 		$tabs = array(
 			'overview'   => __( 'Overview', 'thisismyurl-image-support' ),
-			'references' => __( 'Where images are used', 'thisismyurl-image-support' ),
+			'references' => __( 'Where pictures are used', 'thisismyurl-image-support' ),
 			'settings'   => __( 'Settings', 'thisismyurl-image-support' ),
 		);
 
@@ -488,8 +488,8 @@ final class TIMU_Image_Support_Admin_Page {
 	private static function render_counts( array $counts ) {
 		echo '<div class="timu-sec">';
 		self::section_head(
-			__( 'Your images right now', 'thisismyurl-image-support' ),
-			__( 'Counted from your own library a moment ago, not from an example. Documents, audio and video are not included in any of these.', 'thisismyurl-image-support' )
+			__( 'Your pictures right now', 'thisismyurl-image-support' ),
+			__( 'These numbers were counted from your own pictures just now. Documents, sound files and videos are not counted.', 'thisismyurl-image-support' )
 		);
 
 		$total = $counts['total'];
@@ -500,63 +500,63 @@ final class TIMU_Image_Support_Admin_Page {
 		// so calling that number urgent would be scolding somebody for their own setting.
 		$rows = array(
 			array(
-				'label'  => __( 'Images', 'thisismyurl-image-support' ),
+				'label'  => __( 'Pictures', 'thisismyurl-image-support' ),
 				'count'  => $total,
 				'filter' => '',
-				'help'   => __( 'Every image in your library. Documents, audio and video are left out.', 'thisismyurl-image-support' ),
+				'help'   => __( 'All the pictures on your website. Documents, sound files and videos are left out.', 'thisismyurl-image-support' ),
 				'state'  => '',
 			),
 			array(
-				'label'  => __( 'Missing alt text', 'thisismyurl-image-support' ),
+				'label'  => __( 'Pictures with no description', 'thisismyurl-image-support' ),
 				'count'  => $counts['missing_alt'],
 				'filter' => 'missing-alt',
-				'help'   => __( 'Anyone using a screen reader cannot tell what these images show.', 'thisismyurl-image-support' ),
+				'help'   => __( 'A description (called alt text) tells people who cannot see a picture what it shows. These pictures do not have one yet.', 'thisismyurl-image-support' ),
 				'state'  => self::state( $counts['missing_alt'], $total ),
 				'words'  => array(
-					'settled'   => __( 'Every image is described', 'thisismyurl-image-support' ),
-					'look'      => __( 'A few left to describe', 'thisismyurl-image-support' ),
-					'attention' => __( 'Worth setting time aside', 'thisismyurl-image-support' ),
+					'settled'   => __( 'Every picture has a description', 'thisismyurl-image-support' ),
+					'look'      => __( 'A few still need a description', 'thisismyurl-image-support' ),
+					'attention' => __( 'Worth setting aside some time', 'thisismyurl-image-support' ),
 				),
 			),
 			array(
-				'label'  => __( 'Oversized originals', 'thisismyurl-image-support' ),
+				'label'  => __( 'Pictures much bigger than needed', 'thisismyurl-image-support' ),
 				'count'  => $counts['oversized'],
 				'filter' => 'oversized',
-				'help'   => __( 'Far bigger than your site will ever use, so they sit in every backup you take.', 'thisismyurl-image-support' ),
+				'help'   => __( 'These pictures are far bigger than your website ever shows. They take up space and make your backups bigger.', 'thisismyurl-image-support' ),
 				'state'  => self::state( $counts['oversized'], $total ),
 				'words'  => array(
-					'settled'   => __( 'Nothing oversized', 'thisismyurl-image-support' ),
+					'settled'   => __( 'Nothing is too big', 'thisismyurl-image-support' ),
 					'look'      => __( 'A few to look at', 'thisismyurl-image-support' ),
-					'attention' => __( 'Worth a clear-out', 'thisismyurl-image-support' ),
+					'attention' => __( 'Worth tidying up', 'thisismyurl-image-support' ),
 				),
 			),
 			array(
-				'label'  => __( 'Large image files', 'thisismyurl-image-support' ),
+				'label'  => __( 'Pictures that take a lot of space', 'thisismyurl-image-support' ),
 				'count'  => $counts['heavy'],
 				'filter' => 'heavy',
 				/* translators: %s: file size, e.g. "1 MB". */
-				'help'   => sprintf( __( 'Images bigger than the %s you set below.', 'thisismyurl-image-support' ), size_format( TIMU_Image_Support_Facts::heavy_bytes(), 0 ) ),
+				'help'   => sprintf( __( 'Pictures with a file bigger than %s, the size you chose below.', 'thisismyurl-image-support' ), size_format( TIMU_Image_Support_Facts::heavy_bytes(), 0 ) ),
 				// This card never turns amber or red. The number is measured against a size
 				// the site owner chose themselves, so treating it as a fault would be
 				// scolding somebody for their own setting. Above zero it says so in grey,
 				// which answers the only question the figure raises: is this bad? No.
 				'state'  => 0 === $counts['heavy'] ? 'settled' : 'noted',
 				'words'  => array(
-					'settled' => __( 'Nothing over your size', 'thisismyurl-image-support' ),
-					'noted'   => __( 'Nothing wrong, just large', 'thisismyurl-image-support' ),
+					'settled' => __( 'None are over your size', 'thisismyurl-image-support' ),
+					'noted'   => __( 'Nothing is wrong. They are just large.', 'thisismyurl-image-support' ),
 				),
 			),
 			array(
-				'label'  => __( 'Images with no file', 'thisismyurl-image-support' ),
+				'label'  => __( 'Pictures with a missing file', 'thisismyurl-image-support' ),
 				'count'  => $counts['broken'],
 				'filter' => 'broken',
-				'help'   => __( 'The image is still listed, but the file itself is no longer on the server.', 'thisismyurl-image-support' ),
+				'help'   => __( 'The picture is still listed, but its file is no longer there.', 'thisismyurl-image-support' ),
 				// Any of these is worth knowing about immediately, so this one skips the
 				// share rule: a single missing file is a broken image on a page somewhere.
 				'state'  => 0 === $counts['broken'] ? 'settled' : 'attention',
 				'words'  => array(
 					'settled'   => __( 'Every file is where it should be', 'thisismyurl-image-support' ),
-					'attention' => __( 'Worth clearing up', 'thisismyurl-image-support' ),
+					'attention' => __( 'Worth tidying up', 'thisismyurl-image-support' ),
 				),
 			),
 		);
@@ -584,7 +584,7 @@ final class TIMU_Image_Support_Admin_Page {
 				printf(
 					'<a class="timu-card-link" href="%s">%s</a>',
 					esc_url( self::list_url( $row['filter'] ) ),
-					esc_html__( 'Show these', 'thisismyurl-image-support' )
+					esc_html__( 'Show me these', 'thisismyurl-image-support' )
 				);
 			}
 
@@ -599,7 +599,7 @@ final class TIMU_Image_Support_Admin_Page {
 			echo '<p class="timu-note timu-note-flag">' . esc_html(
 				sprintf(
 					/* translators: 1: images checked, 2: images in the library. */
-					__( 'Oversized images and images with no file were checked in the newest %1$s of your %2$s images, because checking each one means reading its file. Those two numbers are a minimum for a library this size. The other numbers cover every image.', 'thisismyurl-image-support' ),
+					__( 'To keep this page quick, the checks for pictures that are too big or missing a file looked at your newest %1$s of your %2$s pictures. The real numbers may be a little higher. All the other numbers cover every picture.', 'thisismyurl-image-support' ),
 					number_format_i18n( $scan_cap ),
 					number_format_i18n( $total )
 				)
@@ -608,7 +608,7 @@ final class TIMU_Image_Support_Admin_Page {
 
 		if ( isset( $counts['index_complete'] ) && ! $counts['index_complete'] ) {
 			echo '<p class="timu-note timu-note-flag">' . esc_html__(
-				'Some images do not have a recorded file size yet, so the large files number is a minimum for now. Opening the Media list or reloading this page records more of them.',
+				'Some pictures have not had their file size written down yet, so the number of large files may be a little low for now. It fixes itself as you open the Media list or reload this page.',
 				'thisismyurl-image-support'
 			) . '</p>';
 		}
@@ -623,8 +623,8 @@ final class TIMU_Image_Support_Admin_Page {
 					sprintf(
 						/* translators: 1: number of images, 2: total missing alt text. */
 						_n(
-							'%1$d of the %2$d images without alt text is a file that has gone missing. Nobody can describe a photograph that is no longer there, so clear these up first.',
-							'%1$d of the %2$d images without alt text are files that have gone missing. Nobody can describe a photograph that is no longer there, so clear these up first.',
+							'%1$d of the %2$d pictures with no description has a file that has gone missing. Nobody can describe a picture that is no longer there, so it is best to tidy these up first.',
+							'%1$d of the %2$d pictures with no description have files that have gone missing. Nobody can describe a picture that is no longer there, so it is best to tidy these up first.',
 							$counts['broken_no_alt'],
 							'thisismyurl-image-support'
 						),
@@ -633,13 +633,13 @@ final class TIMU_Image_Support_Admin_Page {
 					)
 				),
 				esc_url( self::list_url( 'broken' ) ),
-				esc_html__( 'Show the missing files', 'thisismyurl-image-support' )
+				esc_html__( 'Show the pictures with a missing file', 'thisismyurl-image-support' )
 			);
 		}
 
 		if ( 0 === $counts['oversized'] && $counts['total'] > 0 ) {
 			echo '<p class="timu-note">' . esc_html__(
-				'No oversized images is the normal, healthy result. Since WordPress 5.3 uploads are scaled down on arrival, so a library that came in through the normal upload screen will usually show none at all. This count finds the ones that got in another way.',
+				'Having none that are too big is normal and healthy. WordPress shrinks big pictures when they are added, so this number is usually zero. It only finds pictures that got in some other way.',
 				'thisismyurl-image-support'
 			) . '</p>';
 		}
@@ -647,8 +647,8 @@ final class TIMU_Image_Support_Admin_Page {
 		// Alt text is the one number here that somebody works through deliberately, so it
 		// is the one worth drawing. The others move when images are added or removed rather
 		// than when anybody sets out to change them.
-		printf( '<h3>%s</h3>', esc_html__( 'Images missing alt text, over time', 'thisismyurl-image-support' ) );
-		self::sparkline( 'missing_alt', __( 'Images missing alt text', 'thisismyurl-image-support' ) );
+		printf( '<h3>%s</h3>', esc_html__( 'Pictures with no description, over time', 'thisismyurl-image-support' ) );
+		self::sparkline( 'missing_alt', __( 'Pictures with no description', 'thisismyurl-image-support' ) );
 		echo '</div>';
 	}
 
@@ -705,14 +705,14 @@ final class TIMU_Image_Support_Admin_Page {
 			</text>
 			<text class="timu-svg-cap js-timu-widest-cap" x="<?php echo esc_attr( $widest_cap_x ); ?>" y="90"
 				text-anchor="<?php echo esc_attr( $widest_align ); ?>">
-				<?php echo esc_html__( 'widest served', 'thisismyurl-image-support' ); ?>
+				<?php echo esc_html__( 'widest your site shows', 'thisismyurl-image-support' ); ?>
 			</text>
 
 			<g class="js-timu-normal"<?php echo $show_normal ? '' : ' hidden'; ?>>
 				<line class="js-timu-normal-line" x1="<?php echo esc_attr( $x( 2560 ) ); ?>" y1="44"
 					x2="<?php echo esc_attr( $x( 2560 ) ); ?>" y2="66" stroke="#646970" stroke-width="1" stroke-dasharray="2 2" />
 				<text class="timu-svg-cap js-timu-normal-cap" x="<?php echo esc_attr( $x( 2560 ) ); ?>" y="108" text-anchor="middle">
-					<?php echo esc_html__( 'a normal upload', 'thisismyurl-image-support' ); ?>
+					<?php echo esc_html__( 'a normal picture', 'thisismyurl-image-support' ); ?>
 				</text>
 			</g>
 
@@ -723,7 +723,7 @@ final class TIMU_Image_Support_Admin_Page {
 			</text>
 			<text class="timu-svg-cap timu-svg-flagtick js-timu-flag-cap" x="<?php echo esc_attr( $flag_cap_x ); ?>" y="90"
 				text-anchor="<?php echo esc_attr( $flag_align ); ?>">
-				<?php echo esc_html__( 'flagged from here', 'thisismyurl-image-support' ); ?>
+				<?php echo esc_html__( 'marked from here', 'thisismyurl-image-support' ); ?>
 			</text>
 
 			<text class="timu-svg-cap" x="60" y="90" text-anchor="start">0</text>
@@ -745,7 +745,7 @@ final class TIMU_Image_Support_Admin_Page {
 	 */
 	public static function diagram_label_template() {
 		/* translators: {widest} and {flag} are pixel widths filled in on the page. Keep both tokens exactly as written. */
-		return __( 'A scale of image widths. Sizes up to {widest}px are served to visitors and the oversized flag begins at {flag}px.', 'thisismyurl-image-support' );
+		return __( 'A scale of picture widths. Your site shows pictures up to {widest}px wide. Pictures wider than {flag}px are marked as too big.', 'thisismyurl-image-support' );
 	}
 
 	/**
@@ -845,7 +845,7 @@ final class TIMU_Image_Support_Admin_Page {
 	 */
 	public static function heavy_label_template() {
 		/* translators: {heavy} is a file size such as "1 MB". Keep the token exactly as written. */
-		return __( 'Two copies of the same photograph, both 1600 by 900 pixels. One weighs 2.4 MB and the other 320 KB. Images count as large from {heavy}.', 'thisismyurl-image-support' );
+		return __( 'Two copies of the same photo, both 1600 by 900 pixels. One takes up 2.4 MB and the other 320 KB. A picture counts as large from {heavy}.', 'thisismyurl-image-support' );
 	}
 
 	/**
@@ -936,22 +936,22 @@ final class TIMU_Image_Support_Admin_Page {
 		echo '<div class="timu-sec">';
 		self::section_head(
 			__( 'Settings', 'thisismyurl-image-support' ),
-			__( 'Two numbers that decide which images get flagged. They mark images; they never change them.', 'thisismyurl-image-support' )
+			__( 'Two numbers that decide which pictures get marked. They only mark pictures. They never change them.', 'thisismyurl-image-support' )
 		);
 
 		echo '<div class="timu-card-lg">';
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			echo '<p>' . esc_html__(
-				'There are two numbers here that change which images get flagged: the oversize multiplier and the large-file threshold. Only an administrator can change them, so they are shown to you as they are currently set.',
+				'Two numbers decide which pictures get marked: how wide a picture can be, and how big its file can be. Only an administrator can change them, so you are seeing them as they are set now. You can leave them as they are. They are already set to good choices.',
 				'thisismyurl-image-support'
 			) . '</p>';
 
 			printf(
 				'<p><strong>%s</strong> %s<br /><strong>%s</strong> %s</p>',
-				esc_html__( 'Oversize multiplier:', 'thisismyurl-image-support' ),
+				esc_html__( 'How wide is too wide:', 'thisismyurl-image-support' ),
 				esc_html( number_format_i18n( TIMU_Image_Support_Facts::oversize_threshold(), 2 ) ),
-				esc_html__( 'Large file from:', 'thisismyurl-image-support' ),
+				esc_html__( 'How big is a large file:', 'thisismyurl-image-support' ),
 				esc_html( size_format( TIMU_Image_Support_Facts::heavy_bytes(), 1 ) )
 			);
 
@@ -965,14 +965,14 @@ final class TIMU_Image_Support_Admin_Page {
 		settings_fields( self::GROUP );
 
 		echo '<p class="timu-prose">' . esc_html__(
-			'These two settings measure different things, and it is worth being clear which is which. One is about how many pixels an image contains. The other is about how much data a visitor has to download to see it.',
+			'These two settings measure two different things. One is how many tiny dots (called pixels) a picture has. The other is how much a visitor has to download to see it.',
 			'thisismyurl-image-support'
 		) . '</p>';
 
 		printf( '<h3>%s</h3>', esc_html__( 'Picture size, in pixels', 'thisismyurl-image-support' ) );
 
 		echo '<p class="timu-prose">' . esc_html__(
-			'Dimensions are how many pixels wide and tall an image is, which decides how large it can be shown before it starts to look soft. An image far wider than your site will ever display is carrying pixels nobody will ever see.',
+			'A picture is made of tiny dots called pixels. A picture much wider than your website ever shows has extra dots that nobody will ever see.',
 			'thisismyurl-image-support'
 		) . '</p>';
 
@@ -987,12 +987,12 @@ final class TIMU_Image_Support_Admin_Page {
 			. '<input name="%1$s" id="%1$s" type="number" step="0.05" min="1.3" max="10" value="%3$s" class="small-text" /> &times;'
 			. '<p class="description">%4$s</p>',
 			esc_attr( TIMU_Image_Support_Facts::OPTION_OVERSIZE ),
-			esc_html__( 'Oversize multiplier', 'thisismyurl-image-support' ),
+			esc_html__( 'How wide is too wide', 'thisismyurl-image-support' ),
 			esc_attr( TIMU_Image_Support_Facts::oversize_threshold() ),
 			wp_kses(
 				sprintf(
 					/* translators: 1: widest served width in pixels, 2: current flag width in pixels, already wrapped for live updating. */
-					__( 'How many times wider than the largest size this site serves (%1$dpx) an image must be before it is flagged. At the current setting the flag begins at %2$s. The lowest allowed value is 1.3, because below that it would flag ordinary healthy uploads.', 'thisismyurl-image-support' ),
+					__( 'How many times wider than your biggest picture size (%1$dpx) a picture must be before it is marked. Right now, pictures wider than %2$s are marked. You cannot go below 1.3, because that would mark ordinary, healthy pictures.', 'thisismyurl-image-support' ),
 					$widest,
 					'<span class="timu-flag-px">' . esc_html( sprintf( '%dpx', $flag_at ) ) . '</span>'
 				),
@@ -1011,7 +1011,7 @@ final class TIMU_Image_Support_Admin_Page {
 		printf( '<h3>%s</h3>', esc_html__( 'File size, in megabytes', 'thisismyurl-image-support' ) );
 
 		echo '<p class="timu-prose">' . esc_html__(
-			'File size is how much a visitor actually downloads. It is not the same thing as the dimensions above, and the two do not track each other: two copies of one photograph at identical dimensions can differ many times over in weight, depending on the format and how heavily it was compressed when it was saved.',
+			'File size is how much a visitor has to download. It is not the same as the width above. Two copies of one photo can be the same width but have very different file sizes, depending on how the picture was saved.',
 			'thisismyurl-image-support'
 		) . '</p>';
 
@@ -1022,9 +1022,9 @@ final class TIMU_Image_Support_Admin_Page {
 			. '<input name="%1$s" id="%1$s" type="number" step="0.1" min="0.1" max="100" value="%3$s" class="small-text" /> %5$s'
 			. '<p class="description">%4$s</p>',
 			esc_attr( TIMU_Image_Support_Facts::OPTION_HEAVY_MB ),
-			esc_html__( 'Large file from', 'thisismyurl-image-support' ),
+			esc_html__( 'A large file is one over', 'thisismyurl-image-support' ),
 			esc_attr( TIMU_Image_Support_Facts::heavy_mb() ),
-			esc_html__( 'The weight at which an image is worth a second look. It gets a highlight in the file size column and appears under the large-files filter. This marks images; it never changes them.', 'thisismyurl-image-support' ),
+			esc_html__( 'A picture with a file this big is worth a second look. It is highlighted in the file size column and shows up in the large files list. This only marks pictures. It never changes them.', 'thisismyurl-image-support' ),
 			esc_html( trim( str_replace( '{n}', '', self::size_templates()['mb'] ) ) )
 		);
 
@@ -1048,18 +1048,18 @@ final class TIMU_Image_Support_Admin_Page {
 		// about every future version was one this plugin could not keep. Promising that a
 		// change would be announced is a promise it can.
 		self::section_head(
-			__( 'What this version leaves alone', 'thisismyurl-image-support' ),
-			__( 'True of this release. Anything that changes will be in the changelog.', 'thisismyurl-image-support' )
+			__( 'What this tool never touches', 'thisismyurl-image-support' ),
+			__( 'This is true of this version. If it ever changes, we will say so in the list of changes.', 'thisismyurl-image-support' )
 		);
 
 		echo '<div class="timu-card-lg">';
 
 		$limits = array(
-			__( 'Your image files. Nothing is renamed, moved, resized, compressed or converted. The only content it changes is alt text, and only when you type it. Beyond that it keeps a small file size index, a daily count of what it found, and short-lived copies of its own results.', 'thisismyurl-image-support' ),
-			__( 'Your public site. Everything here happens inside your admin.', 'thisismyurl-image-support' ),
-			__( 'Your data. There are no outside requests of any kind, and nothing is tracked.', 'thisismyurl-image-support' ),
-			__( 'Everything that is not an image. Your documents, audio and video are left alone, and get no entry of any kind.', 'thisismyurl-image-support' ),
-			__( 'Your alt text, even if you remove this plugin. It goes in the same field WordPress has always used, so it belongs to your site. Uninstalling takes away the file size index, the daily counts, the saved results and these two settings, nothing else.', 'thisismyurl-image-support' ),
+			__( 'Your picture files. Nothing is renamed, moved, made smaller or changed in any way. The only thing it can change is a picture description, and only when you type one. It also keeps a small list of file sizes, a daily count of what it found, and short-lived copies of its own results.', 'thisismyurl-image-support' ),
+			__( 'The pages your visitors see. Everything here happens behind the scenes, in your dashboard.', 'thisismyurl-image-support' ),
+			__( 'Your privacy. Nothing is sent anywhere, and nothing is tracked.', 'thisismyurl-image-support' ),
+			__( 'Anything that is not a picture. Your documents, sound files and videos are left completely alone.', 'thisismyurl-image-support' ),
+			__( 'Your descriptions, even if you remove this tool. They are saved in the same place WordPress always keeps them, so they belong to your website. If you uninstall it, only its own file size list, daily counts, saved results and these two settings are removed. Nothing else.', 'thisismyurl-image-support' ),
 		);
 
 		echo '<ul class="timu-limits">';
@@ -1070,15 +1070,15 @@ final class TIMU_Image_Support_Admin_Page {
 
 		echo '</ul>';
 
-		echo '<h3>' . esc_html__( 'One thing worth knowing about alt text', 'thisismyurl-image-support' ) . '</h3>';
+		echo '<h3>' . esc_html__( 'About picture descriptions', 'thisismyurl-image-support' ) . '</h3>';
 
 		echo '<p>' . esc_html__(
-			'Alt text is how somebody using a screen reader gets the same information from a photograph that everyone else gets. A sentence saying what it shows, and why it is there, is enough.',
+			'A picture description (called alt text) tells people who cannot see the picture what it shows. They often use a screen reader, which reads the description out loud. One short sentence about what the picture shows is enough.',
 			'thisismyurl-image-support'
 		) . '</p>';
 
 		echo '<p>' . esc_html__(
-			'Some images carry no meaning and should stay silent for a screen reader, and an empty alt attribute is the right markup for those. WordPress does not record why an alt is empty, though, and a blank field looks identical whether you decided an image was decorative or simply have not got to it yet. So this does not guess. Anything without alt text is counted as missing, including images you left blank on purpose. If that leaves a few decorative images on your list, that seems better than telling you a job is finished when the data cannot say so.',
+			'Some pictures are only for decoration and do not need a description. WordPress cannot tell us which ones, and an empty box looks the same either way. So this tool does not guess. Every picture without a description is counted, even one you left empty on purpose. A few decorative pictures on your list is better than being told the job is done when it might not be.',
 			'thisismyurl-image-support'
 		) . '</p>';
 
@@ -1091,11 +1091,11 @@ final class TIMU_Image_Support_Admin_Page {
 	private static function render_developer_notes() {
 		echo '<div class="timu-sec">';
 		self::section_head(
-			__( 'For developers', 'thisismyurl-image-support' ),
-			__( 'Fourteen filters and two actions, for anyone extending this.', 'thisismyurl-image-support' )
+			__( 'For developers (you can skip this part)', 'thisismyurl-image-support' ),
+			__( 'Technical notes for web developers. Most people never need these.', 'thisismyurl-image-support' )
 		);
 
-		echo '<div class="timu-card-lg">';
+		echo '<details class="timu-card-lg timu-dev"><summary>' . esc_html__( 'Show the technical notes', 'thisismyurl-image-support' ) . '</summary>';
 
 		$hooks = array(
 			array( 'timu_image_support_mime_types', __( 'filter', 'thisismyurl-image-support' ), __( 'Which image types the plugin looks at.', 'thisismyurl-image-support' ) ),
@@ -1138,7 +1138,7 @@ final class TIMU_Image_Support_Admin_Page {
 			esc_html__( 'A filter always wins over the setting on this page, so a site configured in code keeps behaving that way after somebody visits this screen.', 'thisismyurl-image-support' )
 		);
 
-		echo '</div></div>';
+		echo '</details></div>';
 	}
 
 	/**
@@ -1199,9 +1199,9 @@ final class TIMU_Image_Support_Admin_Page {
 		}
 
 		echo '<table class="widefat striped timu-refs"><thead><tr>';
-		printf( '<th scope="col" class="timu-ref-thumb">%s</th>', esc_html__( 'Image', 'thisismyurl-image-support' ) );
+		printf( '<th scope="col" class="timu-ref-thumb">%s</th>', esc_html__( 'Picture', 'thisismyurl-image-support' ) );
 		printf( '<th scope="col">%s</th>', esc_html__( 'File', 'thisismyurl-image-support' ) );
-		printf( '<th scope="col">%s</th>', esc_html__( 'Found in', 'thisismyurl-image-support' ) );
+		printf( '<th scope="col">%s</th>', esc_html__( 'Used in', 'thisismyurl-image-support' ) );
 		echo '</tr></thead><tbody>';
 
 		// Unreferenced images sort first, so on any page they arrive as one contiguous run.
@@ -1246,7 +1246,7 @@ final class TIMU_Image_Support_Admin_Page {
 				// the grouping from the layout. Nothing is drawn.
 				printf(
 					'<span class="screen-reader-text">%s</span>',
-					esc_html__( 'No reference found', 'thisismyurl-image-support' )
+					esc_html__( 'Not found anywhere', 'thisismyurl-image-support' )
 				);
 			} else {
 				foreach ( $hits as $hit ) {
@@ -1279,11 +1279,11 @@ final class TIMU_Image_Support_Admin_Page {
 				esc_html(
 					sprintf(
 						/* translators: %s: number of images. */
-						_n( 'No reference found: %s image', 'No reference found: %s images', $count, 'thisismyurl-image-support' ),
+						_n( 'Not found anywhere: %s picture', 'Not found anywhere: %s pictures', $count, 'thisismyurl-image-support' ),
 						number_format_i18n( $count )
 					)
 				),
-				esc_html__( 'Not necessarily unused. Check where an image appears before you delete it.', 'thisismyurl-image-support' )
+				esc_html__( 'A picture listed here may still be in use. Please check before you delete anything.', 'thisismyurl-image-support' )
 			);
 
 			return;
@@ -1292,7 +1292,7 @@ final class TIMU_Image_Support_Admin_Page {
 		printf(
 			'<tr class="timu-ref-group"><th colspan="3" scope="colgroup">'
 			. '<span class="timu-ref-group-label">%s</span></th></tr>',
-			esc_html__( 'Found somewhere', 'thisismyurl-image-support' )
+			esc_html__( 'Used somewhere', 'thisismyurl-image-support' )
 		);
 	}
 
@@ -1309,7 +1309,7 @@ final class TIMU_Image_Support_Admin_Page {
 		// straight into the sentence beneath it.
 		self::section_head(
 			__( 'What this scan found', 'thisismyurl-image-support' ),
-			__( 'Every place a reference could be found without guessing.', 'thisismyurl-image-support' )
+			__( 'Every place we could be sure a picture is used.', 'thisismyurl-image-support' )
 		);
 
 		echo '<div class="timu-card-lg">';
@@ -1318,14 +1318,14 @@ final class TIMU_Image_Support_Admin_Page {
 		// deleting a live image, and it was sitting second, behind a sentence about file
 		// counts. What follows it is context for the warning, not its equal.
 		echo '<p class="timu-note timu-note-lead">' . esc_html__(
-			'"No reference found" means this search did not find one. It does not mean the image is unused. Page builders that keep layouts in their own tables, shortcodes that pick images at render time, images assembled in JavaScript, and anything a plugin stores privately are all invisible here. Check where an image appears before you delete it.',
+			'"Not found anywhere" does not mean nobody uses the picture. Page builders, shortcodes and some plugins keep pictures in places this check cannot see. Please look at where a picture appears before you delete it. This tool never deletes anything for you.',
 			'thisismyurl-image-support'
 		) . '</p>';
 
 		echo '<p class="timu-note timu-note-quiet">' . esc_html(
 			sprintf(
 				/* translators: 1: images examined, 2: number of files read. */
-				__( 'This looked at %1$s images and read %2$s files from your active theme and any must-use plugins, checking featured images, post and page content, custom fields, and site and theme settings. Ordinary plugins are not read, so an image that only a plugin refers to in its own code will appear here as not found. The same goes for an image picked by ID inside a gallery shortcode, or in the fields a store or form plugin keeps for itself.', 'thisismyurl-image-support' ),
+				__( 'This looked at %1$s pictures. It checked featured pictures, the words in your posts and pages, custom fields, and your site and theme settings, and read %2$s files from your active theme and must-use plugins. It does not look inside ordinary plugins, so a picture that only a plugin uses may show as not found. The same is true for pictures a gallery picks by number, or that a store or form plugin keeps for itself.', 'thisismyurl-image-support' ),
 				number_format_i18n( $shown ),
 				number_format_i18n( $scan['files'] )
 			)
@@ -1333,7 +1333,7 @@ final class TIMU_Image_Support_Admin_Page {
 
 		if ( ! empty( $scan['incomplete'] ) ) {
 			echo '<p class="timu-note timu-note-flag">' . esc_html__(
-				'Part of your site could not be read in full, so "no reference found" is less reliable than usual for this scan. Do not delete anything on the strength of it.',
+				'Part of your website could not be read in full, so this list may be missing some places. Please do not delete anything because of it.',
 				'thisismyurl-image-support'
 			) . '</p>';
 		}
@@ -1362,11 +1362,11 @@ final class TIMU_Image_Support_Admin_Page {
 					'timu_rescan'
 				)
 			),
-			esc_html__( 'Scan again', 'thisismyurl-image-support' ),
+			esc_html__( 'Check again', 'thisismyurl-image-support' ),
 			esc_html(
 				sprintf(
 					/* translators: %s: human-readable time difference, e.g. "5 minutes". */
-					__( 'Last scanned %s ago.', 'thisismyurl-image-support' ),
+					__( 'Last checked %s ago.', 'thisismyurl-image-support' ),
 					human_time_diff( (int) $scan['generated'] )
 				)
 			)
@@ -1385,13 +1385,13 @@ final class TIMU_Image_Support_Admin_Page {
 	private static function render_reference_filters( $only_idle, $all, $idle ) {
 		$links = array(
 			array(
-				'label'  => __( 'All images', 'thisismyurl-image-support' ),
+				'label'  => __( 'All pictures', 'thisismyurl-image-support' ),
 				'count'  => $all,
 				'url'    => self::page_url( array( 'view' => 'references' ) ),
 				'active' => ! $only_idle,
 			),
 			array(
-				'label'  => __( 'No reference found', 'thisismyurl-image-support' ),
+				'label'  => __( 'Not found anywhere', 'thisismyurl-image-support' ),
 				'count'  => $idle,
 				'url'    => self::page_url(
 					array(
@@ -1444,7 +1444,7 @@ final class TIMU_Image_Support_Admin_Page {
 			esc_html(
 				sprintf(
 					/* translators: %s: number of images. */
-					_n( '%s image', '%s images', $total, 'thisismyurl-image-support' ),
+					_n( '%s picture', '%s pictures', $total, 'thisismyurl-image-support' ),
 					number_format_i18n( $total )
 				)
 			)
@@ -1483,7 +1483,7 @@ final class TIMU_Image_Support_Admin_Page {
 	 */
 	public static function export_history() {
 		if ( ! current_user_can( 'upload_files' ) ) {
-			wp_die( esc_html__( 'You are not allowed to export this.', 'thisismyurl-image-support' ), '', array( 'response' => 403 ) );
+			wp_die( esc_html__( 'Sorry, you are not allowed to download this.', 'thisismyurl-image-support' ), '', array( 'response' => 403 ) );
 		}
 
 		check_admin_referer( self::EXPORT_ACTION );
@@ -1572,8 +1572,8 @@ final class TIMU_Image_Support_Admin_Page {
 
 		echo '<div class="timu-sec">';
 		self::section_head(
-			__( 'About this image library', 'thisismyurl-image-support' ),
-			__( 'What is here, what it weighs, and whether it is moving in the right direction.', 'thisismyurl-image-support' )
+			__( 'About your pictures', 'thisismyurl-image-support' ),
+			__( 'What you have, how much space it takes, and whether things are getting better.', 'thisismyurl-image-support' )
 		);
 
 		echo '<div class="timu-card-lg">';
@@ -1583,7 +1583,7 @@ final class TIMU_Image_Support_Admin_Page {
 			esc_html(
 				sprintf(
 					/* translators: %s: human-readable time difference, e.g. "20 minutes". */
-					__( 'Measured %s ago. One reading is kept per day, taken when somebody opens this page, so days nobody looked have no reading at all.', 'thisismyurl-image-support' ),
+					__( 'Counted %s ago. One count is saved each day that someone opens this page. Days when nobody opened it have no count.', 'thisismyurl-image-support' ),
 					human_time_diff( (int) $report['generated'] )
 				)
 			)
@@ -1599,7 +1599,7 @@ final class TIMU_Image_Support_Admin_Page {
 			echo '<p class="timu-note timu-note-flag">' . esc_html(
 				sprintf(
 					/* translators: %s: number of attachments the measurement covers. */
-					__( 'Your library is larger than the %s attachments this measures at once. The size and duplicate figures cover the oldest of them, and untracked files were not counted at all, because the newest images would have looked untracked.', 'thisismyurl-image-support' ),
+					__( 'You have more than %s pictures, which is more than this can count at once. The size numbers cover the oldest ones, and stray files were not counted at all.', 'thisismyurl-image-support' ),
 					number_format_i18n( (int) ( $detail['library_limit'] ?? 0 ) )
 				)
 			) . '</p>';
@@ -1607,41 +1607,41 @@ final class TIMU_Image_Support_Admin_Page {
 
 		$facts = array(
 			array(
-				'label' => __( 'Tracked on disk', 'thisismyurl-image-support' ),
+				'label' => __( 'Space your pictures use', 'thisismyurl-image-support' ),
 				'value' => size_format( $tracked, 1 ),
 				'help'  => sprintf(
 					/* translators: 1: size of the original files, 2: percentage that is generated sizes. */
-					__( '%1$s of that is your original files. The other %2$d%% is sizes WordPress generated.', 'thisismyurl-image-support' ),
+					__( '%1$s of that is your original pictures. The other %2$d%% is smaller copies that WordPress made.', 'thisismyurl-image-support' ),
 					size_format( (int) $now['originals_bytes'], 1 ),
 					$tracked ? (int) round( $now['generated_bytes'] / $tracked * 100 ) : 0
 				),
 			),
 			array(
-				'label' => __( 'Untracked image files', 'thisismyurl-image-support' ),
+				'label' => __( 'Stray picture files', 'thisismyurl-image-support' ),
 				'value' => $capped ? __( 'Not counted', 'thisismyurl-image-support' ) : number_format_i18n( (int) $now['untracked_images'] ),
 				'delta' => $capped ? null : self::delta( $now, $before, 'untracked_images' ),
 				'help'  => $capped
-					? __( 'Your library is larger than this measures at once, so untracked files were not counted. See the note above.', 'thisismyurl-image-support' )
+					? __( 'You have more pictures than this can count at once, so stray files were not counted. See the note above.', 'thisismyurl-image-support' )
 					: sprintf(
 						/* translators: %s: file size. */
-						__( 'Image files in your uploads folder that no attachment accounts for, taking %s.', 'thisismyurl-image-support' ),
+						__( 'Picture files in your uploads folder that are not in your Media Library, using %s.', 'thisismyurl-image-support' ),
 						size_format( (int) $now['untracked_bytes'], 1 )
 					),
 			),
 			array(
-				'label' => __( 'Likely duplicates', 'thisismyurl-image-support' ),
+				'label' => __( 'Possible copies', 'thisismyurl-image-support' ),
 				'value' => number_format_i18n( (int) $now['duplicate_extra'] ),
 				'delta' => $capped ? null : self::delta( $now, $before, 'duplicate_extra' ),
 				'help'  => sprintf(
 					/* translators: %s: number of groups. */
-					_n( 'Redundant copies across %s group of images sharing dimensions and byte count.', 'Redundant copies across %s groups of images sharing dimensions and byte count.', (int) $detail['duplicate_groups'], 'thisismyurl-image-support' ),
+					_n( 'Extra copies in %s group of pictures that match in size and weight.', 'Extra copies in %s groups of pictures that match in size and weight.', (int) $detail['duplicate_groups'], 'thisismyurl-image-support' ),
 					number_format_i18n( (int) $detail['duplicate_groups'] )
 				),
 			),
 			array(
-				'label' => __( 'No recorded uploader', 'thisismyurl-image-support' ),
+				'label' => __( 'No uploader recorded', 'thisismyurl-image-support' ),
 				'value' => number_format_i18n( (int) $now['no_uploader'] ),
-				'help'  => __( 'Images with no author against them, which usually means they arrived by import rather than by hand.', 'thisismyurl-image-support' ),
+				'help'  => __( 'Pictures with no person listed as adding them. This usually means they came in with an import, not by hand.', 'thisismyurl-image-support' ),
 			),
 		);
 
@@ -1672,8 +1672,8 @@ final class TIMU_Image_Support_Admin_Page {
 				sprintf(
 					/* translators: %s: number of images. */
 					_n(
-						'%s image has no recorded file size, so it is left out of the size figures. Opening the Media list records more of them over time.',
-						'%s images have no recorded file size, so they are left out of the size figures. Opening the Media list records more of them over time.',
+						'%s picture has no file size written down yet, so it is left out of the size numbers. Opening the Media list adds more of them over time.',
+						'%s pictures have no file size written down yet, so they are left out of the size numbers. Opening the Media list adds more of them over time.',
 						(int) $detail['unmeasured'],
 						'thisismyurl-image-support'
 					),
@@ -1780,7 +1780,7 @@ final class TIMU_Image_Support_Admin_Page {
 		if ( count( $points ) < 2 ) {
 			printf(
 				'<p class="timu-note timu-note-quiet">%s</p>',
-				esc_html__( 'Not enough readings yet to draw a line. One is kept for each day this page is opened.', 'thisismyurl-image-support' )
+				esc_html__( 'Not enough counts yet to draw a line. One count is saved each day this page is opened.', 'thisismyurl-image-support' )
 			);
 
 			return;
@@ -1866,7 +1866,7 @@ final class TIMU_Image_Support_Admin_Page {
 			return;
 		}
 
-		printf( '<h3>%s</h3>', esc_html__( 'Where the untracked images are', 'thisismyurl-image-support' ) );
+		printf( '<h3>%s</h3>', esc_html__( 'Where the stray pictures are', 'thisismyurl-image-support' ) );
 
 		// Folder names can give away more than they seem to. Some plugins keep private files in
 		// uploads and rely on a folder name nobody could guess, so an Author, who may open this
@@ -1882,8 +1882,8 @@ final class TIMU_Image_Support_Admin_Page {
 				sprintf(
 					/* translators: %s: number of image files. */
 					_n(
-						'%s image file in your uploads folder is not accounted for by the Media Library. Which folder it is in is shown to administrators.',
-						'%s image files in your uploads folder are not accounted for by the Media Library. Which folders they are in is shown to administrators.',
+						'%s picture file in your uploads folder is not in your Media Library. Which folder it is in is shown to administrators.',
+						'%s picture files in your uploads folder are not in your Media Library. Which folders they are in is shown to administrators.',
 						$files,
 						'thisismyurl-image-support'
 					),
@@ -1896,19 +1896,19 @@ final class TIMU_Image_Support_Admin_Page {
 
 		if ( ! empty( $detail['untracked_capped'] ) ) {
 			echo '<p class="timu-note timu-note-flag">' . esc_html__(
-				'The uploads folder is large enough that this looked at the first part of it only. The figures below are a minimum.',
+				'Your uploads folder is large, so only the first part was checked. The numbers below may be low.',
 				'thisismyurl-image-support'
 			) . '</p>';
 		}
 
 		echo '<p class="timu-note timu-note-lead">' . esc_html__(
-			'Folders, not a list of files, and deliberately so. Some of these are sizes left behind when a theme changed the sizes it asks for, and the image they belong to is perfectly healthy. Others belong to a plugin that manages its own directory and should not be touched. This says where they are so you can go and look.',
+			'This shows folders, not a list of files, on purpose. Some of these files were left behind when a theme changed its picture sizes, and the picture they belong to is fine. Others belong to a plugin that looks after its own folder and should be left alone. This only tells you where to look.',
 			'thisismyurl-image-support'
 		) . '</p>';
 
 		echo '<table class="widefat striped timu-refs"><thead><tr>';
 		printf( '<th scope="col">%s</th>', esc_html__( 'Folder', 'thisismyurl-image-support' ) );
-		printf( '<th scope="col">%s</th>', esc_html__( 'Images', 'thisismyurl-image-support' ) );
+		printf( '<th scope="col">%s</th>', esc_html__( 'Pictures', 'thisismyurl-image-support' ) );
 		printf( '<th scope="col">%s</th>', esc_html__( 'Size', 'thisismyurl-image-support' ) );
 		echo '</tr></thead><tbody>';
 
@@ -1931,7 +1931,7 @@ final class TIMU_Image_Support_Admin_Page {
 
 		echo '</tbody></table>';
 
-		self::sparkline( 'untracked_images', __( 'Untracked image files', 'thisismyurl-image-support' ) );
+		self::sparkline( 'untracked_images', __( 'Stray picture files', 'thisismyurl-image-support' ) );
 	}
 
 	/**
@@ -1996,7 +1996,7 @@ final class TIMU_Image_Support_Admin_Page {
 	 * @param array $now    Current metrics.
 	 */
 	private static function render_library_facts( array $detail, array $now ) {
-		printf( '<h3>%s</h3>', esc_html__( 'How this library is set up', 'thisismyurl-image-support' ) );
+		printf( '<h3>%s</h3>', esc_html__( 'How your pictures are set up', 'thisismyurl-image-support' ) );
 
 		$formats = array();
 
@@ -2010,29 +2010,29 @@ final class TIMU_Image_Support_Admin_Page {
 
 		$rows = array(
 			array(
-				__( 'Formats in use', 'thisismyurl-image-support' ),
+				__( 'Kinds of picture you use', 'thisismyurl-image-support' ),
 				$formats ? implode( ', ', $formats ) : __( 'None', 'thisismyurl-image-support' ),
 			),
 			array(
-				__( 'Registered sizes', 'thisismyurl-image-support' ),
+				__( 'Picture sizes your site makes', 'thisismyurl-image-support' ),
 				sprintf(
 					/* translators: 1: number of registered sizes, 2: average files generated per image. */
-					__( '%1$s, producing about %2$s files per image', 'thisismyurl-image-support' ),
+					__( '%1$s sizes, which makes about %2$s files for each picture', 'thisismyurl-image-support' ),
 					number_format_i18n( (int) $detail['registered_sizes'] ),
 					$per_image
 				),
 			),
 			array(
-				__( 'Scaling on upload', 'thisismyurl-image-support' ),
+				__( 'Shrinking big pictures', 'thisismyurl-image-support' ),
 				empty( $detail['scaling_filtered'] )
 					? sprintf(
 						/* translators: %s: width in pixels. */
-						__( 'WordPress scales uploads wider than %spx', 'thisismyurl-image-support' ),
+						__( 'WordPress shrinks pictures wider than %spx', 'thisismyurl-image-support' ),
 						number_format_i18n( (int) $detail['scaling'] )
 					)
 					: sprintf(
 						/* translators: %s: width in pixels. */
-						__( 'WordPress scales uploads wider than %spx by default, but something on this site changes that. If oversized images keep arriving, this is where to look.', 'thisismyurl-image-support' ),
+						__( 'WordPress normally shrinks pictures wider than %spx, but something on your site turns that off. If very large pictures keep arriving, this is why.', 'thisismyurl-image-support' ),
 						number_format_i18n( (int) $detail['scaling'] )
 					),
 			),
@@ -2040,7 +2040,7 @@ final class TIMU_Image_Support_Admin_Page {
 				__( 'Uploads folder', 'thisismyurl-image-support' ),
 				$detail['yearmonth']
 					? __( 'Organised by year and month', 'thisismyurl-image-support' )
-					: __( 'One flat folder', 'thisismyurl-image-support' ),
+					: __( 'One single folder', 'thisismyurl-image-support' ),
 			),
 		);
 
@@ -2054,7 +2054,7 @@ final class TIMU_Image_Support_Admin_Page {
 
 		if ( isset( $detail['formats']['svg+xml'] ) || isset( $detail['formats']['svg'] ) ) {
 			echo '<p class="timu-note timu-note-flag">' . esc_html__(
-				'This library contains SVG files. WordPress does not allow those by default, so something on this site was configured to permit them. An SVG is a document rather than a picture and can carry script, which is worth knowing on a site you have taken over.',
+				'Your pictures include SVG files. WordPress does not allow these to begin with, so something on your site was set up to allow them. An SVG is a small program that draws a picture, and it can contain code. This is worth knowing if you took over this site from someone else.',
 				'thisismyurl-image-support'
 			) . '</p>';
 		}
@@ -2070,7 +2070,7 @@ final class TIMU_Image_Support_Admin_Page {
 
 		if ( count( $history ) < 2 ) {
 			echo '<p class="timu-prose">' . esc_html__(
-				'One reading so far. Come back tomorrow and there will be something to compare it against. A reading is kept for each day this page is opened, for a year.',
+				'Only one count so far. Come back tomorrow and there will be something to compare it with. One count is saved each day this page is opened, for a year.',
 				'thisismyurl-image-support'
 			) . '</p>';
 		} else {
@@ -2106,11 +2106,11 @@ final class TIMU_Image_Support_Admin_Page {
 			esc_attr( $last )
 		);
 
-		printf( '<button type="submit" class="button">%s</button>', esc_html__( 'Download as CSV', 'thisismyurl-image-support' ) );
+		printf( '<button type="submit" class="button">%s</button>', esc_html__( 'Download as a spreadsheet file (CSV)', 'thisismyurl-image-support' ) );
 		echo '</form>';
 
 		echo '<p class="timu-note timu-note-quiet">' . esc_html__(
-			'The file is built when you ask for it and holds only the numbers on this page. Nothing is written to the server and nothing is sent anywhere.',
+			'The file is made when you ask for it and holds only the numbers on this page. Nothing is saved on your website and nothing is sent anywhere.',
 			'thisismyurl-image-support'
 		) . '</p>';
 	}
@@ -2129,45 +2129,45 @@ final class TIMU_Image_Support_Admin_Page {
 	private static function render_support() {
 		echo '<div class="timu-sec">';
 		self::section_head(
-			__( 'Helping this get better', 'thisismyurl-image-support' ),
+			__( 'Helping this tool get better', 'thisismyurl-image-support' ),
 			__( 'Five things that make a difference, in the order they make a difference.', 'thisismyurl-image-support' )
 		);
 
 		echo '<div class="timu-card-lg">';
 
 		echo '<p class="timu-prose">' . esc_html__(
-			'This plugin is free and stays free. It costs a few hours a month, and a full weekend whenever WordPress ships a change that breaks something. The list below is in the order I find genuinely useful, rather than the order that flatters the bank account.',
+			'This tool is free and will stay free. It takes a few hours each month to look after, and a whole weekend whenever WordPress changes something that breaks it. Here are the ways you can help, starting with the ones that help most.',
 			'thisismyurl-image-support'
 		) . '</p>';
 
 		$ways = array(
 			array(
 				'title' => __( 'Tell me when it breaks', 'thisismyurl-image-support' ),
-				'body'  => __( 'A report with the steps you took is worth more to me than any rating. "I filtered by missing alt text and the count was wrong" is a gift. So is a screenshot of something that just looks off.', 'thisismyurl-image-support' ),
+				'body'  => __( 'A note saying what you did and what went wrong helps me more than any rating. A screenshot of something that looks odd is a big help too.', 'thisismyurl-image-support' ),
 				'url'   => 'https://github.com/thisismyurl/thisismyurl-image-support/issues/new',
 				'cta'   => __( 'Report something', 'thisismyurl-image-support' ),
 			),
 			array(
 				'title' => __( 'Tell me what is missing', 'thisismyurl-image-support' ),
-				'body'  => __( 'Half the most useful things anyone has sent me were not code. They were somebody describing a job this did not do. If you have thought through the trade-off as well, better still.', 'thisismyurl-image-support' ),
+				'body'  => __( 'Some of the best ideas people have sent me were not code. They were someone telling me about a job this tool did not do.', 'thisismyurl-image-support' ),
 				'url'   => 'https://github.com/thisismyurl/thisismyurl-image-support/discussions',
 				'cta'   => __( 'Suggest something', 'thisismyurl-image-support' ),
 			),
 			array(
 				'title' => __( 'Leave a review', 'thisismyurl-image-support' ),
-				'body'  => __( 'One specific paragraph about what this did for your library beats fifty drive-by five stars, and it is what decides whether anybody else ever finds it.', 'thisismyurl-image-support' ),
+				'body'  => __( 'A few real sentences about how this helped you mean more than many quick star ratings, and they help other people find it.', 'thisismyurl-image-support' ),
 				'url'   => 'https://wordpress.org/support/plugin/thisismyurl-image-support/reviews/',
 				'cta'   => __( 'Review on WordPress.org', 'thisismyurl-image-support' ),
 			),
 			array(
-				'title' => __( 'Star the repository', 'thisismyurl-image-support' ),
-				'body'  => __( 'Ten seconds, costs nothing, and the signal travels further than people think.', 'thisismyurl-image-support' ),
+				'title' => __( 'Star it on GitHub', 'thisismyurl-image-support' ),
+				'body'  => __( 'It takes ten seconds and costs nothing.', 'thisismyurl-image-support' ),
 				'url'   => 'https://github.com/thisismyurl/thisismyurl-image-support',
 				'cta'   => __( 'View on GitHub', 'thisismyurl-image-support' ),
 			),
 			array(
 				'title' => __( 'Sponsor the work', 'thisismyurl-image-support' ),
-				'body'  => __( 'Last on this list on purpose. Sponsorship keeps the free plugins working against new WordPress and PHP releases, and part of it each quarter goes to open-source mentoring with young people in small towns. I grew up in one. The door was not shown to me, and I am not interested in keeping it shut behind me.', 'thisismyurl-image-support' ),
+				'body'  => __( 'Last on this list on purpose. Sponsorship keeps these free plugins working with new versions of WordPress and PHP. Part of it each quarter goes to teaching young people in small towns about open-source work. I grew up in one. Nobody showed me the door, and I do not want to keep it shut behind me.', 'thisismyurl-image-support' ),
 				'url'   => 'https://github.com/sponsors/thisismyurl',
 				'cta'   => __( 'Sponsor on GitHub', 'thisismyurl-image-support' ),
 			),
@@ -2191,7 +2191,7 @@ final class TIMU_Image_Support_Admin_Page {
 		echo '</ol>';
 
 		echo '<p class="timu-note">' . esc_html__(
-			'If none of that is in the budget, that is genuinely fine. The first two are not the consolation prize. They are first because they do more for this plugin than money does.',
+			'If none of this fits your budget, that is completely fine. The first two help this tool more than money does.',
 			'thisismyurl-image-support'
 		) . '</p>';
 

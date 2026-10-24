@@ -699,3 +699,6 @@
 	.timu-card-lg { padding: 1rem; }
 	.timu-head-action { margin-top: 0; }
 }
+
+.timu-dev summary { cursor: pointer; font-weight: 600; padding: 2px 0; }
+.timu-dev[open] summary { margin-bottom: 12px; }

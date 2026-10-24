@@ -9,44 +9,36 @@ Stable tag: 1.6297
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-See what is in your image library: missing alt text, oversized or broken images, and files nothing refers to. Edit alt text in place.
+Shows you which pictures on your website need a little attention, and helps you add descriptions. It only looks. It never changes, moves or deletes your pictures.
 
 == Description ==
 
-Most WordPress image libraries were not built in one sitting. They accumulate, often across several people and several years, and at some point somebody has to answer questions about one: how much of it is missing alt text, how much of it is far larger than the site can use, how much of it is broken, and how much of it does anything still refer to.
+Over time, a website collects a lot of pictures. This plugin gives you a simple list of them, and shows you which ones could use a little attention.
 
-WordPress does not answer any of those. This does.
+**It is safe to try.** This plugin only looks at your pictures. It does not change, move, shrink or delete any of them. The only thing you can change is a picture's description, and only when you type one in yourself. You can install it on any website and look around without worrying.
 
-It is a reporting tool. It reads your library, tells you what it found, and says plainly what it could not determine. The only content it ever changes is alt text, and only when you type it. Nothing is renamed, resized, converted, moved or deleted, which means you can install it on a site you have just inherited and look around without risking anything.
+**What it helps you find**
 
-**Alt text, editable in place.** A column showing each image's alt text as an editable field. Type, press Enter or click away, and it saves. Working through two hundred images stops being two hundred page loads.
+* **Pictures without a description.** A description (called "alt text") is a short sentence saying what is in the picture. People who cannot see the picture, and search engines, rely on it. You can type a description right in the list, press Enter, and it is saved.
+* **Pictures that are very large.** Some pictures are much bigger than your website needs. They take up space and can slow your pages down. The plugin points them out so you can decide what to do.
+* **Pictures that have gone missing.** Sometimes the picture file is gone but WordPress still lists it. These show up as broken pictures. The plugin shows you which ones.
+* **Where each picture is used.** Before you remove anything, you can see which pages are using a picture.
+* **A simple overview.** One page tells you how many pictures you have, how much space they use, and what could use attention. It is based on your own pictures.
 
-**A filter for the images that need work.** Narrow the list to images missing alt text, images that have it, oversized originals, large files, or files that have gone missing. "We should sort out our alt text" becomes a list you can finish.
+**What it does not do**
 
-**Images whose file has vanished.** An attachment can outlive its file: an image gets replaced and the old entry is left behind, a cleanup removes files but not the entries, a site moves and the uploads folder does not come with it. WordPress carries on listing those as though they were there. They are the broken thumbnails in your library, and until now nothing pointed them out.
+* It does not change how your website looks to visitors. Everything happens in your WordPress admin area.
+* It does not change, move, rename, shrink or delete a picture file.
+* It does not send anything to anyone. There are no outside connections, no tracking, and nothing leaves your website.
+* It only looks at pictures. Documents, audio and video are left alone.
 
-**Dimensions and file size, sortable.** Sort by file size and the six megabyte photo somebody dropped into a post in 2019 comes straight to the top.
+If you uninstall the plugin, the descriptions you typed stay exactly where they are. The plugin only removes its own small notes (such as file sizes it remembered so the list could sort).
 
-**An oversized flag.** WordPress scales big uploads down on arrival, but images that predate that behaviour, or that were imported straight onto disk, escaped it entirely. Those are the enormous originals quietly filling your uploads folder and every backup you take. They get flagged.
+= About descriptions (alt text) =
 
-**Search that includes alt text.** WordPress already searches image titles, captions, descriptions and filenames. It does not search alt text, which is often the only place the subject of a photograph is written down. In the list view, searching "harbour" now finds the harbour photo even when the file is called IMG_4821.jpg.
+A good description says what the picture shows and why it is there, in one short sentence. For example: "Two people shaking hands outside a bakery."
 
-**A dated picture of the whole library.** Media > Image Support opens on what is actually here: how much space it takes, how much of that is sizes WordPress generated rather than files you uploaded, how many image files are sitting in your uploads folder that no attachment accounts for, likely duplicates, and how many images arrived with no uploader recorded. A reading is kept for each day the page is opened, so the numbers can be compared over time, and the whole history downloads as a CSV for whatever date range you ask for.
-
-**A page that explains itself.** Media > Image Support has three tabs: an overview of what needs attention with a link straight into each set, a list of where every image is used, and the settings. Everything on it is drawn from your own library rather than described in the abstract.
-
-= What this plugin does not do =
-
-* It does not touch the front end. Everything happens inside wp-admin.
-* It does not change, move, rename, compress or convert a single image file. It reads your library and lets you edit alt text. It also stores a file size number against each image, a daily reading of its own numbers so progress can be compared over time, and short-lived copies of its results. Uninstalling removes all of it.
-* It makes no external network requests of any kind. Nothing is sent anywhere.
-* It only concerns itself with images. Documents, audio and video are left alone.
-
-= A note on alt text =
-
-Alt text describes an image for people using a screen reader, and for anyone whose image fails to load. A good description says what the image shows and why it is there, in a sentence.
-
-A word on decorative images. Some images carry no meaning and should be silent to a screen reader, and the correct markup for those is an empty alt attribute. WordPress does not record *why* an alt is empty, though: a blank field looks exactly the same whether somebody decided the image was decorative or simply never got to it. So this plugin does not guess. Anything without alt text is listed as missing, including images you have deliberately left blank. If that means a handful of genuinely decorative images stay on your list, that seems better than telling you a job is done when the data cannot actually say so.
+Some pictures are only decoration and do not need a description. WordPress cannot tell the difference between a picture you chose to leave blank and one you simply have not got to yet. So this plugin lists every picture without a description, even the ones you meant to leave blank. That is on purpose. It is better to show you a slightly longer list than to tell you the job is finished when it might not be.
 
 = For developers =
 
@@ -54,94 +46,74 @@ Filters: `timu_image_support_mime_types`, `timu_image_support_widest_width`, `ti
 
 Actions: `timu_image_support_before_write` and `timu_image_support_after_write`, fired around every alt-text change with the previous and new values.
 
-= Images only, on purpose =
-
-This release is deliberately about images. Documents and video raise different questions and deserve their own tools rather than a single screen trying to serve everything at once.
-
 == Installation ==
 
-1. Install and activate the plugin.
-2. Go to **Media > Image Support**. It explains what the plugin does, reports what it found in your library, and has a button through to your images.
-3. That button opens Media in **list view**, which matters: WordPress shows the Media screen as a grid by default, and a grid has no columns, so none of this appears there.
-4. Use the filter dropdown above the list to find images missing alt text.
+1. Install and activate the plugin. Nothing is changed when you do this.
+2. In your WordPress menu, go to **Media > Image Support**. This page explains what the plugin found, in plain words.
+3. Press the button on that page to open your pictures as a list. The list view is needed because the default picture grid has no columns to show the extra information.
+4. Use the filter above the list to find pictures that need a description.
 
 == Frequently Asked Questions ==
 
-= I activated the plugin and cannot see anything. Where is it? =
-Two things are probably going on. There is no top-level menu: the plugin adds columns to the Media list and one page under Media. And WordPress shows the Media screen as a grid by default, where there is no table and therefore nothing to add columns to.
+= Will this change or delete my pictures? =
+No. The plugin only looks at your pictures. The one thing you can change is a picture's description, and only when you type it yourself. If you ever want to undo a description, just edit it again.
 
-Go to **Media > Image Support** and use the button there, or click "Your images" on the Plugins screen. Either one opens the list view and WordPress remembers the choice.
+= I installed it and cannot see anything. Where is it? =
+Look under **Media > Image Support** in your WordPress menu. There is no separate menu item for this plugin. Then press the button on that page to open your pictures as a list. WordPress shows pictures as a grid by default, and a grid has no room for the extra columns. WordPress remembers your choice afterwards.
 
 = Where are the new columns? =
-On the Media list view, just after the file name. If you are looking at the grid, switch to the list using the two small buttons at the top left of the Media screen.
+In the Media list, just after the file name. If you see a grid of pictures instead, switch to the list using the two small buttons near the top left of the Media page.
 
-= What does "files that have gone missing" mean? =
-The image is still listed in your library, with a name and a size, but the file itself is no longer on the server. You usually notice these as broken thumbnails.
+= What does "picture file is missing" mean? =
+WordPress still lists the picture, but the actual file is no longer on your website. You may notice these as broken pictures. This can happen after a move or a clean-up.
 
-It matters more than tidiness. A missing file still counts as an image without alt text, so it shows up as work to do, and nobody can describe a photograph that is not there. The overview page says how many of your undescribed images are actually missing files, so the number you are working from is honest.
+The plugin only tells you about them. It does not remove anything. If you decide to delete one, first check that no page is still using it (the "Where pictures are used" tab can help).
 
-This plugin only reports them. Deleting an entry is your call, and worth checking first, because a post may still be pointing at it.
+= How do I see where a picture is used? =
+Open the "Where images are used" tab under **Media > Image Support**. It lists your pictures, twenty at a time, and shows the places where each one was found: as a featured picture, inside a page or post, in a setting, or in a theme or plugin file.
 
-= Where are my images actually used? =
-Media > Image Support has a second tab, "Where images are used", listing every image twenty at a time with the places a reference was found: as a featured image, in post or page content, in a custom field, in a site or theme setting, or in a theme or plugin file.
+If it says "No reference found", that means this search did not find one. It does not promise the picture is unused, because some tools keep pictures in places this search cannot see. Please check before deleting anything. The plugin itself never deletes anything.
 
-It exists because WordPress's own "Unattached" filter answers a different question. `post_parent` records how a file was uploaded, not how it is used. Measured on a real 766-image library, nearly a quarter of "unattached" images were live on the site, and 86 attached images were absent from the post they were attached to.
+= Does it send anything anywhere? What does it keep? =
+It sends nothing anywhere. There are no outside connections, no tracking and no accounts. It works even if your website is offline.
 
-"No reference found" means this search did not find one. It does not mean the image is unused. The site icon and the custom logo are recognised, but an image picked by ID inside a gallery shortcode, or in a store or form plugin's own fields, is not. Page builders that keep layouts in their own tables, shortcodes that pick images at render time, and anything a plugin stores privately are all invisible to it. Check where an image appears before deleting it. The plugin only reports; it never deletes anything.
+On your own website it keeps a few small notes, and removes all of them if you uninstall it:
 
-= What does this plugin store, and does it send anything anywhere? =
-It sends nothing anywhere. There are no external requests of any kind, no analytics, no telemetry, no licence checks, and no calls home. The plugin will work with the server disconnected from the internet.
+* The file size of each picture, so the list can be sorted by size.
+* Two settings (described below).
+* A once-a-day count of its own totals, kept for a year, so you can see progress.
+* Short-lived saved results, so pages open quickly.
 
-What it stores on your own site, all of it removed when you uninstall:
+None of this is personal information.
 
-* A number against each image, being the file size, so the Media list can sort by it.
-* Two settings: the oversize multiplier and the large-file threshold.
-* One reading a day of its own counts, kept for a year, so progress can be compared.
-* Short-lived caches of what its scans found, so a page load does not repeat the work.
-
-None of that is personal data. The daily readings are counts, not lists. The scans read your posts, custom fields, settings and theme files looking for file names, but they keep only which category a name was found in, never the content they searched.
-
-Your alt text is the exception, and it is not really this plugin's data: it goes into the field WordPress has always used, so it stays exactly where it is when the plugin is removed.
-
-= What is on the About this image library page? =
-Facts rather than faults. The size of the library and how much of it is generated thumbnails, image files in the uploads folder that no attachment accounts for, likely duplicates, images with no recorded uploader, the formats in use, how many sizes your site registers, whether upload scaling is switched on, and whether uploads are organised by year and month.
-
-None of it is a problem list. It is the set of things somebody taking over a site would otherwise have to work out by hand.
+= What is on the "About this image library" page? =
+Simple facts about your pictures, not a list of faults: how much space they use, how much of that is smaller copies WordPress made for you, files in your uploads folder that WordPress does not know about, pictures that might be duplicates, and similar. It is the kind of information someone taking over a website would otherwise have to work out by hand.
 
 = How does the progress-over-time part work? =
-One reading is kept per day, taken when somebody opens the page. There is no scheduled task and nothing runs in the background, which means days when nobody looked have no reading at all. That is worth knowing before you read the trend.
+The plugin saves one reading per day, on days when somebody opens the page. It does not run anything in the background. Days when nobody opened it have no reading. You can download your readings as a spreadsheet (CSV) file whenever you like. The file is made on the spot and is not stored or sent anywhere.
 
-Readings are kept for a year and can be downloaded as a CSV for any date range. The file is built when you ask for it, holds only the numbers shown on the page, is never written to the server, and is not sent anywhere.
+= Why are untracked files shown by folder, not as a list? =
+A long list of file names makes it tempting to delete them, and many should be kept. Some are smaller copies that belong to healthy pictures. Others belong to other plugins. Showing folders tells you where to look without suggesting everything in them is rubbish.
 
-= Why are untracked files shown by folder instead of as a list? =
-Because a list of file names invites deleting them, and a good proportion of them should not be deleted. Some are sizes left behind when a theme changed the sizes it asks for, and the image they belong to is perfectly healthy. Others belong to a plugin that manages its own directory. Showing the folders tells you where to go and look without implying that everything listed is rubbish. Administrators can open each folder to see the files inside it, linked so you can see what one actually is. Anyone else sees only how many there are. Folders that form and store plugins use for private files are left out of the scan, and so are other sites' uploads on the main site of a network.
+= What can I change in the settings? =
+Two numbers, on the Settings tab of **Media > Image Support**, both for administrators. One decides how large a picture must be before it is called "very large". The other decides how many megabytes make a file "heavy". Changing a number only changes which pictures get a label. It never changes a picture. Both start at sensible values, so you do not need to touch them.
 
-= What can I configure? =
-Two numbers, on the Settings tab of Media > Image Support, both requiring an administrator: the oversize multiplier, which decides how much wider than your largest served size an image has to be before it is flagged, and the large-file threshold in megabytes. Everything else is a developer filter, because it is either derived from your site's own registered sizes or not a decision a site owner has a reason to make. Changing either number only changes which images get marked; it never changes an image.
+= What happens to my descriptions if I delete the plugin? =
+They stay. Descriptions are saved in the place WordPress itself uses, so every other tool can still see them. Uninstalling only removes the plugin's own small notes.
 
-= Does this change my images? =
-No. Nothing about your image files is altered, moved or re-saved. The only content this plugin changes is alt text, and only when you type it.
+= Why can I not sort by size in pixels (dimensions)? =
+WordPress stores width and height in a way that cannot be sorted reliably, and a sort button that quietly did nothing would be worse than none. File size can be sorted, because this plugin keeps its own number for it.
 
-= What happens to my alt text if I delete the plugin? =
-It stays. Alt text is stored in WordPress's own field, exactly where the attachment editor and every other plugin looks for it. Uninstalling removes the file-size index this plugin builds for sorting, the daily readings, the saved results and the two settings above, on every site of a network. Nothing else is touched.
+= What counts as "very large"? =
+A picture more than one and a half times wider than the widest size your website uses (2048 pixels on a standard setup). WordPress already shrinks new uploads, so a normal photo you add today is not flagged. Pictures that are flagged usually came from before that shrinking existed, or were put straight onto the website's storage.
 
-= Why can I not sort by dimensions? =
-Because it would be a lie. Width and height are stored inside a serialized blob that the database cannot sort on, and offering a sort control that quietly did nothing would be worse than not offering it. File size is sortable because this plugin maintains a separate numeric index for it.
+It is normal to see none at all on a well-kept website. That means all is well. You can change the number on the Settings tab.
 
-= What counts as "oversized"? =
-An image more than one and a half times wider than the largest size your site will ever serve, which on a default install is 2048 pixels.
+= Will it work on a website with a lot of pictures? =
+Yes. The columns, filters and overview work well on large libraries. For very large ones (tens of thousands of pictures), some checks look at the newest 2,000 pictures only, and the page tells you when that happens, so it never guesses.
 
-That number comes from measuring rather than guessing. Since WordPress 5.3, uploads are scaled down to 2560 pixels automatically, so an ordinary photo you upload today sits at about 1.25 times the yardstick and is perfectly healthy. Anything much past that did not come through the normal upload path: it predates the scaling, it was imported directly onto disk, or the scaling was switched off. Those files are often several thousand pixels wide and nothing in WordPress points them out.
-
-The multiplier is a setting on Media > Image Support, where the page also shows you the resulting pixel width so the number means something. It will not go below 1.3, because below that it would start flagging ordinary healthy uploads. Developers can override it with the `timu_image_support_oversize_threshold` filter, and change the yardstick itself with `timu_image_support_widest_width`. A filter always wins over the setting. The full list is under "For developers" below.
-
-Seeing none at all is the normal result on a well-kept library, and it is worth knowing that rather than wondering whether the feature works.
-
-= Does it work with a very large media library? =
-The columns, the alt filters and the library measurement scale fine. The measurement reads attachments in batches, up to 50,000 of them, and holds a short file name for each file it finds, so memory use grows with the library at roughly 100 bytes a file. Past that limit the page says so and leaves the untracked-file count out rather than guess. Two checks have to read each file or its metadata, so they look at the newest 2,000 images: oversized originals and images with no file. On a library larger than that the page says so, and those two numbers are a minimum. The "where images are used" scan examines the newest 5,000 images, reads your content in pages, and says so when part of your site could not be read, because "no reference found" is not worth much then. Results are kept for an hour, and every limit can be changed with a filter.
-
-= Can I edit alt text if I did not upload the image? =
-Only if your role lets you edit that attachment. The check is per image, not a blanket permission, so contributors do not gain the ability to edit other people's uploads.
+= Can I edit a description if I did not upload the picture? =
+Only if your WordPress role already lets you edit that picture. The plugin does not give anyone extra permissions.
 
 == Screenshots ==
 

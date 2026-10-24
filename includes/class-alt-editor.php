@@ -43,11 +43,11 @@ final class TIMU_Image_Support_Alt_Editor {
 		$attachment_id = isset( $_POST['id'] ) ? absint( wp_unslash( $_POST['id'] ) ) : 0;
 
 		if ( $attachment_id <= 0 || 'attachment' !== get_post_type( $attachment_id ) ) {
-			wp_send_json_error( array( 'message' => __( 'That image could not be found.', 'thisismyurl-image-support' ) ), 404 );
+			wp_send_json_error( array( 'message' => __( 'That picture could not be found.', 'thisismyurl-image-support' ) ), 404 );
 		}
 
 		if ( ! current_user_can( 'edit_post', $attachment_id ) ) {
-			wp_send_json_error( array( 'message' => __( 'You are not allowed to edit this image.', 'thisismyurl-image-support' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'You are not allowed to change this picture.', 'thisismyurl-image-support' ) ), 403 );
 		}
 
 		$alt = isset( $_POST['alt'] ) ? sanitize_text_field( wp_unslash( $_POST['alt'] ) ) : '';
@@ -63,7 +63,7 @@ final class TIMU_Image_Support_Alt_Editor {
 				array(
 					'alt'     => $alt,
 					'changed' => false,
-					'message' => __( 'No change.', 'thisismyurl-image-support' ),
+					'message' => __( 'Nothing changed.', 'thisismyurl-image-support' ),
 				)
 			);
 		}
@@ -97,8 +97,8 @@ final class TIMU_Image_Support_Alt_Editor {
 				'alt'     => $alt,
 				'changed' => true,
 				'message' => '' === $alt
-					? __( 'Cleared. This image now counts as missing alt text.', 'thisismyurl-image-support' )
-					: __( 'Saved.', 'thisismyurl-image-support' ),
+					? __( 'Cleared. This picture now shows as needing a description.', 'thisismyurl-image-support' )
+					: __( 'Saved. You can change it again any time.', 'thisismyurl-image-support' ),
 			)
 		);
 	}

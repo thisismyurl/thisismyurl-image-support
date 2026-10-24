@@ -79,7 +79,7 @@ final class TIMU_Image_Support_Reference_Scan {
 	 */
 	public static function sources() {
 		return array(
-			'featured' => __( 'Featured image', 'thisismyurl-image-support' ),
+			'featured' => __( 'Featured picture', 'thisismyurl-image-support' ),
 			'content'  => __( 'Post or page content', 'thisismyurl-image-support' ),
 			'field'    => __( 'A custom field', 'thisismyurl-image-support' ),
 			'option'   => __( 'A site or theme setting', 'thisismyurl-image-support' ),
