@@ -579,10 +579,6 @@
 
 /* Where images are used ---------------------------------------------------- */
 
-.timu-tabs {
-	margin: 1.5rem 0 0;
-}
-
 .timu-ref-views {
 	margin: 1rem 0 0.5rem;
 	font-size: 13px;
@@ -702,3 +698,31 @@
 
 .timu-dev summary { cursor: pointer; font-weight: 600; padding: 2px 0; }
 .timu-dev[open] summary { margin-bottom: 12px; }
+
+/* Shared look (timu-ui) ---------------------------------------------------- */
+
+/* To-do items are amber, not red: a missing description is routine housekeeping. Red is kept for a real failure, a file that is gone. */
+.timu-overview { max-width: 75rem; }
+.timu-cards { grid-template-columns: repeat(auto-fit, minmax(11.5rem, 1fr)); }
+.timu-oversize,
+.timu-status { font-size: 12px; }
+.timu-status.is-look { color: #805500; }
+.timu-status.is-attention { background: #fcf9e8; border-color: #dba617; color: #805500; }
+.timu-status.is-problem { background: #fcf0f1; border-color: #f0b8b9; color: #b32d2e; }
+.timu-card.has-attention { border-top-color: #dba617; }
+.timu-card.has-problem { border-top-color: #d63638; }
+
+/* A blank description is marked with an amber rule and keeps a readable white field. Pink read as an error and hid the placeholder text. */
+.timu-alt-cell.is-empty .timu-alt-input {
+	border-color: #8c8f94;
+	background-color: #fff;
+	box-shadow: inset 3px 0 0 #dba617;
+}
+.timu-alt-input::placeholder { color: #646970; opacity: 1; }
+
+.timu-ref-none { color: #646970; font-size: 13px; }
+.timu-refs thead th { font-weight: 600; border-bottom: 1px solid #c3c4c7; }
+.timu-ui .timu-note-quiet { margin-top: 0.5rem; }
+.timu-status { white-space: normal; }
+.timu-card-head { flex-wrap: wrap; }
+.timu-card-lg > form > :first-child { margin-top: 0; }

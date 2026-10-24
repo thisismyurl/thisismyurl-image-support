@@ -113,10 +113,14 @@ final class TIMU_Image_Support {
 		// The overview page needs the stylesheet and its own small script, but none of the
 		// inline-editing script, which would have nothing to act on there.
 		if ( $overview === $hook ) {
+			if ( ! wp_style_is( 'timu-ui', 'registered' ) ) {
+				wp_register_style( 'timu-ui', $base . 'timu-ui.css', array(), TIMU_IMAGE_SUPPORT_VERSION );
+			}
+
 			wp_enqueue_style(
 				'timu-image-support',
 				$base . 'media-library.css',
-				array(),
+				array( 'timu-ui' ),
 				TIMU_IMAGE_SUPPORT_VERSION
 			);
 

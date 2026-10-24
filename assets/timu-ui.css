@@ -1,0 +1,85 @@
+/* timu-ui 1.0 - shared by the thisismyurl plugins. Keep this file identical in every plugin that ships it. */
+.timu-ui{
+	--timu-ui-accent:var(--wp-admin-theme-color,#3858e9);
+	--timu-ui-text:#1d2327; --timu-ui-muted:#50575e; --timu-ui-line:#dcdcde; --timu-ui-surface:#fff;
+	--timu-ui-s1:4px; --timu-ui-s2:8px; --timu-ui-s3:12px; --timu-ui-s4:16px; --timu-ui-s6:24px; --timu-ui-s8:32px;
+	--timu-ui-radius:8px;
+	max-width:64rem; margin-inline-end:var(--timu-ui-s6);
+	color:var(--timu-ui-text); font-size:14px; line-height:1.5;
+}
+.timu-ui *,.timu-ui *::before,.timu-ui *::after{box-sizing:border-box}
+.timu-ui--bare{max-width:none;margin:0}
+
+/* Header */
+.timu-ui-head{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:var(--timu-ui-s4);margin:var(--timu-ui-s2) 0 var(--timu-ui-s6)}
+.timu-ui-head h1{margin:0 0 var(--timu-ui-s1);padding:0;font-size:23px;font-weight:400;line-height:1.3}
+.timu-ui-lede{margin:0;max-width:44rem;color:var(--timu-ui-muted)}
+.timu-ui-head-actions{display:flex;flex-wrap:wrap;gap:var(--timu-ui-s2);align-items:center}
+
+/* Tabs: real links, aria-current="page", core .nav-tab markup */
+.timu-ui-tabs{margin:0 0 var(--timu-ui-s6)}
+.timu-ui-tabs .nav-tab{font-size:14px;padding:8px 16px;margin-inline-start:0;margin-inline-end:var(--timu-ui-s1)}
+.timu-ui-tabs .nav-tab[aria-current="page"]{background:var(--timu-ui-surface);border-bottom-color:var(--timu-ui-surface);color:var(--timu-ui-text);box-shadow:inset 0 2px 0 var(--timu-ui-accent)}
+
+/* Sections and cards */
+.timu-ui-sec{margin:0 0 var(--timu-ui-s8)}
+.timu-ui-sec-head h2{margin:0 0 var(--timu-ui-s1);padding:0;font-size:18px;font-weight:600;line-height:1.3}
+.timu-ui-sec-head p{margin:0 0 var(--timu-ui-s4);max-width:44rem;color:var(--timu-ui-muted)}
+.timu-ui-card{background:var(--timu-ui-surface);border:1px solid var(--timu-ui-line);border-radius:var(--timu-ui-radius);padding:var(--timu-ui-s6)}
+.timu-ui-card+.timu-ui-card{margin-top:var(--timu-ui-s4)}
+.timu-ui-card>:first-child{margin-top:0}.timu-ui-card>:last-child{margin-bottom:0}
+.timu-ui-card h3{margin:0 0 var(--timu-ui-s1);font-size:16px;line-height:1.4}
+.timu-ui-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(14rem,1fr));gap:var(--timu-ui-s4)}
+.timu-ui-stat{font-size:32px;line-height:1.1;font-variant-numeric:tabular-nums}
+
+/* Pills: icon plus words, never colour alone */
+.timu-ui-pill{display:inline-flex;align-items:center;gap:var(--timu-ui-s1);padding:2px 10px 2px 6px;border:1px solid;border-radius:999px;font-size:12px;line-height:1.6;white-space:nowrap}
+.timu-ui-pill .dashicons{width:16px;height:16px;font-size:16px}
+.timu-ui-pill--good{color:#007017;background:#edf6ee;border-color:#a7d3ae}
+.timu-ui-pill--info{color:#50575e;background:#f0f0f1;border-color:#c3c4c7}
+.timu-ui-pill--note{color:#805500;background:#fcf9e8;border-color:#e0cc80}
+.timu-ui-pill--problem{color:#b32d2e;background:#fcf0f1;border-color:#f0b8b9}
+
+/* Assurance box ("Safe to try") and inline messages; same tones as the pills */
+.timu-ui-assure{display:flex;gap:var(--timu-ui-s3);align-items:flex-start;padding:var(--timu-ui-s4);margin:0 0 var(--timu-ui-s6);background:var(--timu-ui-surface);border:1px solid var(--timu-ui-line);border-inline-start:4px solid #007017;border-radius:var(--timu-ui-radius)}
+.timu-ui-assure .dashicons{color:#007017;flex:none}
+.timu-ui-assure p{margin:0 0 var(--timu-ui-s2);max-width:44rem}.timu-ui-assure p:last-child{margin:0}
+.timu-ui-assure--note{border-inline-start-color:#996800}.timu-ui-assure--note .dashicons{color:#805500}
+.timu-ui-assure--problem{border-inline-start-color:#d63638}.timu-ui-assure--problem .dashicons{color:#b32d2e}
+
+/* Form rows: a div grid in place of form-table */
+.timu-ui-field{display:grid;grid-template-columns:minmax(12rem,16rem) 1fr;gap:var(--timu-ui-s2) var(--timu-ui-s6);padding:var(--timu-ui-s4) 0;border-top:1px solid var(--timu-ui-line)}
+.timu-ui-field:first-child{border-top:0;padding-top:0}
+.timu-ui-field>legend,.timu-ui-field>label,.timu-ui-label{font-weight:600}
+.timu-ui-help{margin:var(--timu-ui-s1) 0 0;color:var(--timu-ui-muted);font-size:13px;max-width:40rem}
+.timu-ui-choice{display:block;margin:0 0 var(--timu-ui-s2)}
+.timu-ui-choice small{display:block;margin-inline-start:24px;color:var(--timu-ui-muted);font-size:13px}
+.timu-ui-field fieldset{margin:0;padding:0;border:0;min-width:0}
+.timu-ui-field>fieldset{grid-column:1/-1}
+.timu-ui-field>fieldset>legend{padding:0;margin:0 0 var(--timu-ui-s2)}
+.timu-ui-tag{margin-inline-start:var(--timu-ui-s2);font-size:12px;font-weight:600;color:#007017}
+
+/* "More options" disclosure: native details, no script */
+.timu-ui-more{margin-top:var(--timu-ui-s4);border-top:1px solid var(--timu-ui-line);padding-top:var(--timu-ui-s3)}
+.timu-ui-more>summary{cursor:pointer;color:var(--timu-ui-accent);font-weight:600;padding:var(--timu-ui-s1) 0}
+.timu-ui-more>summary:focus-visible{outline:2px solid var(--timu-ui-accent);outline-offset:2px}
+
+/* Empty state */
+.timu-ui-empty{text-align:start;max-width:36rem;padding:var(--timu-ui-s8) var(--timu-ui-s6)}
+.timu-ui-empty .dashicons{width:32px;height:32px;font-size:32px;color:var(--timu-ui-muted)}
+.timu-ui-empty h3{margin:var(--timu-ui-s2) 0 var(--timu-ui-s1)}
+
+/* Actions row, family links and footer trust line */
+.timu-ui-actions{display:flex;flex-wrap:wrap;gap:var(--timu-ui-s2);align-items:center;margin-top:var(--timu-ui-s4)}
+.timu-ui-foot{display:flex;flex-wrap:wrap;gap:var(--timu-ui-s2) var(--timu-ui-s4);align-items:center;margin:var(--timu-ui-s8) 0 0;padding-top:var(--timu-ui-s4);border-top:1px solid var(--timu-ui-line);color:var(--timu-ui-muted);font-size:13px}
+.timu-ui-foot .dashicons{color:#007017}
+.timu-ui-foot .timu-ui-foot-links{margin-inline-start:auto}
+.timu-ui-switch{display:flex;gap:var(--timu-ui-s3);font-size:13px}
+.timu-ui-switch [aria-current="page"]{font-weight:600;color:var(--timu-ui-text);text-decoration:none}
+
+@media (max-width:782px){
+	.timu-ui{margin-inline-end:var(--timu-ui-s2)}
+	.timu-ui-field{grid-template-columns:1fr}
+	.timu-ui-card{padding:var(--timu-ui-s4)}
+	.timu-ui-head-actions .button{flex:1 1 auto;text-align:center}
+}

@@ -299,6 +299,7 @@ final class TIMU_Image_Support_Admin_Page {
 			'settled'   => 'M2 6.2 L4.8 9 L10 3',
 			'look'      => 'M1 6 C3 2.6 9 2.6 11 6 C9 9.4 3 9.4 1 6 Z M6 4.6 A1.4 1.4 0 1 0 6 7.4 A1.4 1.4 0 1 0 6 4.6',
 			'attention' => 'M6 1.6 L11.2 10.4 L0.8 10.4 Z M6 4.6 L6 7.2 M6 8.6 L6 9',
+			'problem'   => 'M6 1.6 L11.2 10.4 L0.8 10.4 Z M6 4.6 L6 7.2 M6 8.6 L6 9',
 
 			// Grey, and shaped like an information mark rather than a warning, because this
 			// one reports a fact instead of passing a verdict.
@@ -362,30 +363,27 @@ final class TIMU_Image_Support_Admin_Page {
 			$view = 'overview';
 		}
 
-		echo '<div class="wrap timu-overview">';
+		echo '<div class="wrap timu-overview timu-ui">';
 
-		self::render_header();
+		self::render_header( $view );
+		echo '<hr class="wp-header-end">';
 		self::render_tabs( $view );
 
 		if ( 'references' === $view ) {
 			self::render_references();
-			echo '</div>';
-			return;
-		}
-
-		if ( 'settings' === $view ) {
+		} elseif ( 'settings' === $view ) {
 			self::render_settings();
-			echo '</div>';
-			return;
+		} else {
+			$counts = self::counts();
+
+			self::render_counts( $counts );
+			self::render_about();
+			self::render_limits();
+			self::render_developer_notes();
+			self::render_support();
 		}
 
-		$counts = self::counts();
-
-		self::render_counts( $counts );
-		self::render_about();
-		self::render_limits();
-		self::render_developer_notes();
-		self::render_support();
+		self::render_footer();
 
 		echo '</div>';
 	}
@@ -396,30 +394,56 @@ final class TIMU_Image_Support_Admin_Page {
 	 * The action sits in the header rather than buried in a panel, because getting to the
 	 * list view is the single thing somebody arriving here most needs to do.
 	 */
-	private static function render_header() {
-		echo '<div class="timu-head">';
+	private static function render_header( $view = 'overview' ) {
+		echo '<header class="timu-ui-head">';
 
-		echo '<div class="timu-head-text">';
+		echo '<div>';
 		printf( '<h1>%s</h1>', esc_html__( 'Image Support', 'thisismyurl-image-support' ) );
 		printf(
-			'<p class="timu-sub">%s</p>',
-			esc_html__( 'This page looks at the pictures on your website and tells you what it finds. It only looks. It never changes, moves or deletes your pictures. The one thing it can change is a picture description, and only when you type one yourself.', 'thisismyurl-image-support' )
+			'<p class="timu-ui-lede">%s</p>',
+			esc_html__( 'Shows you which pictures need a little attention. It only looks, and never changes your pictures.', 'thisismyurl-image-support' )
 		);
 		echo '</div>';
 
+		echo '<div class="timu-ui-head-actions">';
 		printf(
-			'<a class="button button-primary timu-head-action" href="%s">%s</a>',
+			'<a class="button button-primary" href="%s">%s</a>',
 			esc_url( self::list_url() ),
 			esc_html__( 'Open your pictures', 'thisismyurl-image-support' )
 		);
-
 		echo '</div>';
 
-		echo '<p class="timu-note timu-note-wide"><strong>' . esc_html__( 'Switch to the list view first.', 'thisismyurl-image-support' )
-			. '</strong> ' . esc_html__(
-				'To begin with, WordPress shows your pictures as a grid of small squares, and a grid has no room for the extra details this tool adds. The button above switches you to the list view, and WordPress remembers your choice.',
-				'thisismyurl-image-support'
-			) . '</p>';
+		echo '</header>';
+
+		// The list-view hint matters to someone arriving for the first time, so it is shown on the overview only, and only until
+		// WordPress has been switched to the list view.
+		if ( 'overview' === $view && 'list' !== get_user_option( 'media_library_mode' ) ) {
+			echo '<div class="timu-ui-assure timu-ui-assure--note"><span class="dashicons dashicons-info-outline" aria-hidden="true"></span><div><p><strong>'
+				. esc_html__( 'Switch to the list view first.', 'thisismyurl-image-support' ) . '</strong> '
+				. esc_html__( 'WordPress shows your pictures as a grid of small squares, and a grid has no room for the extra details this tool adds. The button above switches you to the list view, and WordPress remembers your choice.', 'thisismyurl-image-support' )
+				. '</p></div></div>';
+		}
+	}
+
+	/**
+	 * Footer: the one thing that is always true here, and a quiet link to the sister plugin.
+	 */
+	private static function render_footer() {
+		echo '<p class="timu-ui-foot"><span class="dashicons dashicons-shield" aria-hidden="true"></span><span>'
+			. esc_html__( 'This page only looks. The only thing it ever changes is a description you type yourself.', 'thisismyurl-image-support' )
+			. '</span><span class="timu-ui-foot-links">';
+
+		if ( defined( 'TIMU_FORMATS_VERSION' ) ) {
+			printf(
+				'<span class="timu-ui-switch"><a href="%1$s" aria-current="page">%2$s</a><a href="%3$s">%4$s</a></span>',
+				esc_url( self::page_url() ),
+				esc_html__( 'Image Support', 'thisismyurl-image-support' ),
+				esc_url( admin_url( 'upload.php?page=thisismyurl-image-formats' ) ),
+				esc_html__( 'Image Formats', 'thisismyurl-image-support' )
+			);
+		}
+
+		echo '</span></p>';
 	}
 
 	/**
@@ -447,7 +471,7 @@ final class TIMU_Image_Support_Admin_Page {
 			'settings'   => __( 'Settings', 'thisismyurl-image-support' ),
 		);
 
-		echo '<nav class="nav-tab-wrapper timu-tabs">';
+		echo '<nav class="nav-tab-wrapper timu-ui-tabs" aria-label="' . esc_attr__( 'Image Support sections', 'thisismyurl-image-support' ) . '">';
 
 		foreach ( $tabs as $view => $label ) {
 			printf(
@@ -522,7 +546,8 @@ final class TIMU_Image_Support_Admin_Page {
 				'label'  => __( 'Pictures much bigger than needed', 'thisismyurl-image-support' ),
 				'count'  => $counts['oversized'],
 				'filter' => 'oversized',
-				'help'   => __( 'These pictures are far bigger than your website ever shows. They take up space and make your backups bigger.', 'thisismyurl-image-support' ),
+				'help'   => __( 'These pictures are far bigger than your website ever shows. They take up space and make your backups bigger.', 'thisismyurl-image-support' )
+					. ( defined( 'TIMU_FORMATS_VERSION' ) ? ' ' . __( 'Image Formats can make a picture smaller from its own page.', 'thisismyurl-image-support' ) : '' ),
 				'state'  => self::state( $counts['oversized'], $total ),
 				'words'  => array(
 					'settled'   => __( 'Nothing is too big', 'thisismyurl-image-support' ),
@@ -553,10 +578,10 @@ final class TIMU_Image_Support_Admin_Page {
 				'help'   => __( 'The picture is still listed, but its file is no longer there.', 'thisismyurl-image-support' ),
 				// Any of these is worth knowing about immediately, so this one skips the
 				// share rule: a single missing file is a broken image on a page somewhere.
-				'state'  => 0 === $counts['broken'] ? 'settled' : 'attention',
+				'state'  => 0 === $counts['broken'] ? 'settled' : 'problem',
 				'words'  => array(
-					'settled'   => __( 'Every file is where it should be', 'thisismyurl-image-support' ),
-					'attention' => __( 'Worth tidying up', 'thisismyurl-image-support' ),
+					'settled' => __( 'Every file is where it should be', 'thisismyurl-image-support' ),
+					'problem' => __( 'Worth tidying up', 'thisismyurl-image-support' ),
 				),
 			),
 		);
@@ -1245,7 +1270,7 @@ final class TIMU_Image_Support_Admin_Page {
 				// Carried for anyone moving through the table cell by cell, who does not get
 				// the grouping from the layout. Nothing is drawn.
 				printf(
-					'<span class="screen-reader-text">%s</span>',
+					'<span class="timu-ref-none">%s</span>',
 					esc_html__( 'Not found anywhere', 'thisismyurl-image-support' )
 				);
 			} else {
@@ -1322,14 +1347,14 @@ final class TIMU_Image_Support_Admin_Page {
 			'thisismyurl-image-support'
 		) . '</p>';
 
-		echo '<p class="timu-note timu-note-quiet">' . esc_html(
+		echo '<details class="timu-ui-more"><summary>' . esc_html__( 'How this check works', 'thisismyurl-image-support' ) . '</summary><p class="timu-note timu-note-quiet">' . esc_html(
 			sprintf(
 				/* translators: 1: images examined, 2: number of files read. */
 				__( 'This looked at %1$s pictures. It checked featured pictures, the words in your posts and pages, custom fields, and your site and theme settings, and read %2$s files from your active theme and must-use plugins. It does not look inside ordinary plugins, so a picture that only a plugin uses may show as not found. The same is true for pictures a gallery picks by number, or that a store or form plugin keeps for itself.', 'thisismyurl-image-support' ),
 				number_format_i18n( $shown ),
 				number_format_i18n( $scan['files'] )
 			)
-		) . '</p>';
+		) . '</p></details>';
 
 		if ( ! empty( $scan['incomplete'] ) ) {
 			echo '<p class="timu-note timu-note-flag">' . esc_html__(
